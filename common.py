@@ -1,3 +1,6 @@
+# © nycz 2013
+# Licenced under MIT.
+
 import json
 import re
 import sys
