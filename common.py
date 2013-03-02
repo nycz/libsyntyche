@@ -12,8 +12,9 @@ from PyQt4 import QtGui
 def read_json(path):
     return json.loads(read_file(path))
 
-def write_json(path, data):
-    write_file(path, json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True))
+def write_json(path, data, sort_keys=True):
+    write_file(path, json.dumps(data, ensure_ascii=False, indent=2,
+               sort_keys=sort_keys))
 
 def read_file(path):
     with open(path, encoding='utf-8') as f:
