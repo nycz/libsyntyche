@@ -66,7 +66,7 @@ def read_stylesheet(path):
         \s*
         :
         \s*
-        (?P<value>\S+?);?
+        (?P<value>.+?);?
     $""".format(legal_chars=allowed_chars), re.MULTILINE | re.VERBOSE)
 
     stylesheet = '\n'.join([l for l in data.splitlines()
