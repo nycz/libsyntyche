@@ -2,6 +2,7 @@
 # Licenced under MIT.
 
 import json
+import os.path
 import re
 import sys
 
