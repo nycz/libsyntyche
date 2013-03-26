@@ -5,11 +5,12 @@ import json
 import os.path
 import re
 import sys
+import traceback
 
 from PyQt4 import QtGui
 
 
-# =============== IO/file handling ==================
+# ============= IO/file handling ====================
 def read_json(path):
     return json.loads(read_file(path))
 
@@ -31,6 +32,12 @@ def local_path(path):
 # ===================================================
 
 
+# ============= Misc functions ======================
+def print_traceback():
+    traceback.print_exc(file=sys.stdout)
+# ===================================================
+
+
 # ============= Qt Specific =========================
 def kill_theming(layout):
     layout.setMargin(0)
@@ -41,7 +48,7 @@ def set_hotkey(key, target, callback):
 # ===================================================
 
 
-# ============ Enhanced CSS =========================
+# ============= Enhanced CSS ========================
 def read_stylesheet(path):
     """
     Return a valid CSS or Qt CSS stylesheet.
