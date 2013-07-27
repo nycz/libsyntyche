@@ -81,8 +81,10 @@ def parse_stylesheet(data):
     find_str = r'\${varname}(?=[^{legal_char}]|$)'
 
     for key, value in variable_declaration_rx.findall(data):
-        stylesheet = re.sub(find_str.format(varname=key, legal_char=allowed_chars),
-                            value, stylesheet)
+        searchterm = find_str.format(varname=key, legal_char=allowed_chars)
+        stylesheet, subs = re.subn(searchterm, value, stylesheet)
+        if not subs:
+            print('[stylesheet] warning: ${} is never used'.format(key))
 
     return stylesheet
 # ===================================================
