@@ -49,7 +49,7 @@ def set_hotkey(key, target, callback):
 
 
 # ============= Enhanced CSS ========================
-def read_stylesheet(path):
+def parse_stylesheet(data):
     """
     Return a valid CSS or Qt CSS stylesheet.
 
@@ -65,7 +65,6 @@ def read_stylesheet(path):
     $variable_name anywhere in the stylesheet
     """
 
-    data = read_file(path)
     allowed_chars = 'a-zA-Z0-9_'
 
     variable_declaration_rx = re.compile(r"""^
