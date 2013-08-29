@@ -7,8 +7,6 @@ import re
 import sys
 import traceback
 
-from PyQt4 import QtGui
-
 
 # ============= IO/file handling ====================
 def read_json(path):
@@ -44,6 +42,7 @@ def kill_theming(layout):
     layout.setSpacing(0)
 
 def set_hotkey(key, target, callback):
+    from PyQt4 import QtGui
     QtGui.QShortcut(QtGui.QKeySequence(key), target, callback)
 # ===================================================
 
