@@ -2,8 +2,10 @@
 # Licenced under MIT.
 
 import json
+import os
 import os.path
 import re
+import shutil
 import sys
 import traceback
 
@@ -27,6 +29,18 @@ def write_file(path, data):
 
 def local_path(path):
     return os.path.join(sys.path[0], path)
+
+def make_sure_config_exists(config, defconfig):
+    """
+    Check if the file exists, otherwise copy the default
+    file to the path instead, creating directories if needded
+    """
+    if not os.path.exists(config):
+        path = os.path.dirname(config)
+        if not os.path.exists(path):
+            os.makedirs(path, mode=0o755, exist_ok=True)
+        shutil.copyfile(defconfig, config)
+        print('No config found, copied the default to {}.'.format(path))
 # ===================================================
 
 
