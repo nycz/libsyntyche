@@ -71,6 +71,11 @@ class GenericTerminal(QtGui.QWidget):
         self.output_term.setText('Error: ' + msg)
         self.show()
 
+    def prompt(self, msg):
+        self.input_term.setText(msg)
+        self.input_term.setFocus()
+        self.show()
+
     def command_parsing_injection(self, arg):
         pass
 
