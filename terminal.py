@@ -58,6 +58,12 @@ class GenericTerminal(QtGui.QWidget):
         self.input_term.history_up.connect(self.history_up)
         self.input_term.history_down.connect(self.history_down)
 
+        # Autocomplete
+        self.ac_suggestions = []
+        self.ac_index = 0
+        self.input_term.tab_pressed.connect(self.autocomplete)
+        self.input_term.reset_ac_suggestions.connect(self.reset_ac_suggestions)
+
         self.commands = {}
 
     def setFocus(self):
@@ -126,7 +132,44 @@ class GenericTerminal(QtGui.QWidget):
         self.history[self.history_index] = self.input_term.text()
 
 
-    # ==== Useful commands ====================== #
+    # ==== Autocomplete ========================== #
+
+    def autocomplete(self):
+        """
+        Main autocomplete functions.
+        Is called whenever tab is pressed.
+        """
+        pass
+
+    def run_autocompletion(self, text):
+        # Generate new suggestions if none exist
+        if not self.ac_suggestions:
+            self.ac_suggestions = self.get_ac_suggestions(text)
+
+        # If there's only one possibility, set it and move on
+        if len(self.ac_suggestions) == 1:
+            text = self.ac_suggestions[0]
+            self.reset_ac_suggestions()
+        # Otherwise start scrolling through 'em
+        elif self.ac_suggestions:
+            text = self.ac_suggestions[self.ac_index]
+            self.ac_index += 1
+            if self.ac_index == len(self.ac_suggestions):
+                self.ac_index = 0
+        return text
+
+    def get_ac_suggestions(self, prefix):
+        return []
+
+    def reset_ac_suggestions(self):
+        """
+        Reset the list of suggestions if another button than tab
+        has been pressed.
+        """
+        self.ac_suggestions = []
+        self.ac_index = 0
+
+    # ==== Useful commands ======================= #
 
     def cmd_help(self, arg):
         if not arg:
