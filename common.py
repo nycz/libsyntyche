@@ -40,7 +40,7 @@ def make_sure_config_exists(config, defconfig):
         if not os.path.exists(path):
             os.makedirs(path, mode=0o755, exist_ok=True)
         shutil.copyfile(defconfig, config)
-        print('No config found, copied the default to {}.'.format(path))
+        print('No config found, copied the default to {}.'.format(config))
 # ===================================================
 
 
