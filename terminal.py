@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal
+from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 
 from libsyntyche.common import kill_theming
 
@@ -32,7 +32,32 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
             return super().keyPressEvent(event)
 
 class GenericTerminalOutputBox(QtGui.QLineEdit):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.animate = False
+        self.timer = QTimer(self)
+        self.timer.setInterval(5)
+        self.timer.timeout.connect(self._add_character)
+        self.buffer = ''
+
+    def set_timer_interval(self, num):
+        self.timer.setInterval(num)
+
+    def _add_character(self):
+        if not self.buffer:
+            self.timer.stop()
+            return
+        super().setText(self.text() + self.buffer[0])
+        self.buffer = self.buffer[1:]
+
+    def setText(self, text):
+        if not self.animate or not text:
+            super().setText(text)
+            return
+        super().setText(text[0])
+        if len(text) > 1:
+            self.buffer = text[1:]
+            self.timer.start()
 
 class GenericTerminal(QtGui.QWidget):
     def __init__(self, parent, input_term_constructor, output_term_constructor):
