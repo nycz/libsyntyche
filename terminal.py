@@ -89,6 +89,8 @@ class GenericTerminal(QtGui.QWidget):
         self.input_term.tab_pressed.connect(self.autocomplete)
         self.input_term.reset_ac_suggestions.connect(self.reset_ac_suggestions)
 
+        # Each post in self.commands is (callback/signal, helptext[, options])
+        # options is an optional dict with - surprise - options
         self.commands = {}
 
     def setFocus(self):
@@ -124,7 +126,13 @@ class GenericTerminal(QtGui.QWidget):
 
         command = text[0].lower()
         if command in self.commands:
-            arg = text[1:].strip()
+            command_data = self.commands[command]
+            # Keep the whitespace if the correct option is present and true
+            if len(command_data) == 3 and  command_data[2].get('keep whitespace', False):
+                arg = text[1:]
+            # Otherwise strip it away
+            else:
+                arg = text[1:].strip()
             # Run command
             run = self.commands[command][0]
             if isinstance(run, pyqtBoundSignal):
