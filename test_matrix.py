@@ -111,6 +111,40 @@ class MatrixGenericTest(unittest.TestCase):
         self.matrix.remove_col(2)
         self.assertEqual(self.matrix.data, data)
 
+    def test_copy_row_down(self):
+        data = [
+            ['One', 'Two', 'Three'],
+            ['Aye', 'Bee', 'See'],
+            ['One', 'Two', 'Three']
+        ]
+        self.matrix.copy_row(0,2)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_row_up(self):
+        data = [
+            ['Aye', 'Bee', 'See'],
+            ['One', 'Two', 'Three'],
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.copy_row(1,0)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_col_left(self):
+        data = [
+            ['One', 'Three', 'Two', 'Three'],
+            ['Aye', 'See', 'Bee', 'See'],
+        ]
+        self.matrix.copy_col(2,1)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_col_right(self):
+        data = [
+            ['One', 'Two', 'Three', 'One'],
+            ['Aye', 'Bee', 'See', 'Aye'],
+        ]
+        self.matrix.copy_col(0,3)
+        self.assertEqual(self.matrix.data, data)
+
 
 class MatrixMoveTest(unittest.TestCase):
 
