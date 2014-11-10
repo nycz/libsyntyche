@@ -33,3 +33,12 @@ class MatrixTest(unittest.TestCase):
     def test_clear(self):
         self.matrix.clear()
         self.assertEqual(self.matrix.data, [[default_item()]])
+
+    def test_flip_orientation(self):
+        self.matrix.flip_orientation()
+        data = [
+            ['One', 'Aye'],
+            ['Two', 'Bee'],
+            ['Three', 'See']
+        ]
+        self.assertEqual(self.matrix.data, data)
