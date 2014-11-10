@@ -5,7 +5,7 @@ from matrix import Matrix
 def default_item():
     return 'TEST'
 
-class MatrixTest(unittest.TestCase):
+class MatrixGenericTest(unittest.TestCase):
 
     def setUp(self):
         data = [
@@ -109,4 +109,96 @@ class MatrixTest(unittest.TestCase):
             ['Aye', 'Bee']
         ]
         self.matrix.remove_col(2)
+        self.assertEqual(self.matrix.data, data)
+
+
+class MatrixMoveTest(unittest.TestCase):
+
+    def setUp(self):
+        data = [
+            ['One', 'Two', 'Three', 'Four'],
+            ['Aye', 'Bee', 'See', 'Door'],
+            ['Bip', 'Blop', 'Foo', 'Bar'],
+            ['Cats', 'Dogs', 'Yay', 'Oops']
+        ]
+        self.matrix = Matrix(default_item, data)
+
+    def test_move_row_down(self):
+        data = [
+            ['Aye', 'Bee', 'See', 'Door'],
+            ['Bip', 'Blop', 'Foo', 'Bar'],
+            ['One', 'Two', 'Three', 'Four'],
+            ['Cats', 'Dogs', 'Yay', 'Oops']
+        ]
+        self.matrix.move_row(0,2)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_row_up(self):
+        data = [
+            ['One', 'Two', 'Three', 'Four'],
+            ['Aye', 'Bee', 'See', 'Door'],
+            ['Cats', 'Dogs', 'Yay', 'Oops'],
+            ['Bip', 'Blop', 'Foo', 'Bar']
+        ]
+        self.matrix.move_row(3,2)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_row_last_to_first(self):
+        data = [
+            ['Cats', 'Dogs', 'Yay', 'Oops'],
+            ['One', 'Two', 'Three', 'Four'],
+            ['Aye', 'Bee', 'See', 'Door'],
+            ['Bip', 'Blop', 'Foo', 'Bar']
+        ]
+        self.matrix.move_row(3,0)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_row_first_to_last(self):
+        data = [
+            ['Aye', 'Bee', 'See', 'Door'],
+            ['Bip', 'Blop', 'Foo', 'Bar'],
+            ['Cats', 'Dogs', 'Yay', 'Oops'],
+            ['One', 'Two', 'Three', 'Four']
+        ]
+        self.matrix.move_row(0,3)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_col_right(self):
+        data = [
+            ['One', 'Three', 'Four', 'Two'],
+            ['Aye', 'See', 'Door', 'Bee'],
+            ['Bip', 'Foo', 'Bar', 'Blop'],
+            ['Cats', 'Yay', 'Oops', 'Dogs']
+        ]
+        self.matrix.move_col(1,3)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_col_left(self):
+        data = [
+            ['One', 'Three', 'Two', 'Four'],
+            ['Aye', 'See', 'Bee', 'Door'],
+            ['Bip', 'Foo', 'Blop', 'Bar'],
+            ['Cats', 'Yay', 'Dogs', 'Oops']
+        ]
+        self.matrix.move_col(2,1)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_col_last_to_first(self):
+        data = [
+            ['Four', 'One', 'Two', 'Three'],
+            ['Door', 'Aye', 'Bee', 'See'],
+            ['Bar', 'Bip', 'Blop', 'Foo'],
+            ['Oops', 'Cats', 'Dogs', 'Yay']
+        ]
+        self.matrix.move_col(3,0)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_move_col_first_to_last(self):
+        data = [
+            ['Two', 'Three', 'Four', 'One'],
+            ['Bee', 'See', 'Door', 'Aye'],
+            ['Blop', 'Foo', 'Bar', 'Bip'],
+            ['Dogs', 'Yay', 'Oops', 'Cats']
+        ]
+        self.matrix.move_col(0,3)
         self.assertEqual(self.matrix.data, data)

@@ -3,7 +3,7 @@ class Matrix():
     def __init__(self, default_item, data=None):
         self.default_item = default_item
         if data:
-            self.data = data
+            self.data = [x.copy() for x in data]
         else:
             self.data = [[self.default_item()]]
 
@@ -70,7 +70,8 @@ class Matrix():
 
     def move_col(self, oldpos, newpos):
         for n in range(len(self.data)):
-            self.data[n].insert(newpos, oldpos)
+            x = self.data[n].pop(oldpos)
+            self.data[n].insert(newpos, x)
 
     def copy_row(self, oldpos, newpos):
         row = self.data[oldpos].copy()
