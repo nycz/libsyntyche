@@ -1,5 +1,3 @@
-def default_item():
-    return ('', (0,0))
 
 class Matrix():
     def __init__(self, default_item, data=None):
@@ -34,7 +32,7 @@ class Matrix():
 
 
     def clear(self):
-        self.data = [[default_item()]]
+        self.data = [[self.default_item()]]
 
     def flip_orientation(self):
         self.data = list(map(list, zip(*self.data)))

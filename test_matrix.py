@@ -29,3 +29,7 @@ class MatrixTest(unittest.TestCase):
         newval = 'NEW!!'
         self.matrix[2,1] = newval
         self.assertEqual(self.matrix.data[1][2], newval)
+
+    def test_clear(self):
+        self.matrix.clear()
+        self.assertEqual(self.matrix.data, [[default_item()]])
