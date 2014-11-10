@@ -42,3 +42,9 @@ class MatrixTest(unittest.TestCase):
             ['Three', 'See']
         ]
         self.assertEqual(self.matrix.data, data)
+
+    def test_count_rows(self):
+        self.assertEqual(self.matrix.count_rows(), 2)
+
+    def test_count_cols(self):
+        self.assertEqual(self.matrix.count_cols(), 3)
