@@ -14,11 +14,10 @@ class Matrix():
         # return '\n'.join('\t|\t'.join(repr(x) for x in row) for row in self.data)
 
     def __contains__(self, key):
-        if len(key) == 2:
-            x, y = key
-            return x in range(len(self.data[0])) and y in range(len(self.data))
-        else:
-            return False
+        for row in self.data:
+            if key in row:
+                return True
+        return False
 
     def __getitem__(self, key):
         x, y = key
