@@ -48,3 +48,51 @@ class MatrixTest(unittest.TestCase):
 
     def test_count_cols(self):
         self.assertEqual(self.matrix.count_cols(), 3)
+
+    def test_add_row(self):
+        newrow = [default_item()]*3
+
+        data = [
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.add_row(1)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            newrow,
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.add_row(0)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            newrow,
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See'],
+            newrow
+        ]
+        self.matrix.add_row()
+        self.assertEqual(self.matrix.data, data)
+
+    def test_add_col(self):
+        data = [
+            ['One', default_item(), 'Two', 'Three'],
+            ['Aye', default_item(), 'Bee', 'See']
+        ]
+        self.matrix.add_col(1)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            [default_item(), 'One', default_item(), 'Two', 'Three'],
+            [default_item(), 'Aye', default_item(), 'Bee', 'See']
+        ]
+        self.matrix.add_col(0)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            [default_item(), 'One', default_item(), 'Two', 'Three', default_item()],
+            [default_item(), 'Aye', default_item(), 'Bee', 'See', default_item()]
+        ]
+        self.matrix.add_col()
+        self.assertEqual(self.matrix.data, data)

@@ -44,18 +44,18 @@ class Matrix():
         return len(self.data[0])
 
     def add_row(self, pos=-1):
-        data = [default_item() for _ in range(len(self.data[0]))]
+        data = [self.default_item() for _ in range(self.count_cols())]
         if pos == -1:
             self.data.append(data)
         else:
             self.data.insert(pos, data)
 
     def add_col(self, pos=-1):
-        for n in range(len(self.data)):
+        for n in range(self.count_rows()):
             if pos == -1:
-                self.data[n].append(default_item())
+                self.data[n].append(self.default_item())
             else:
-                self.data[n].insert(pos, default_item())
+                self.data[n].insert(pos, self.default_item())
 
     def remove_row(self, pos):
         del self.data[pos]
