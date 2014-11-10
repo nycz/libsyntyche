@@ -25,11 +25,11 @@ class Matrix():
 
     def __setitem__(self, key, value):
         x, y = key
-        if not value:
-            self.data[y][x] = default_item()
-            return
-        text, (w, h) = value
-        assert isinstance(text, str) and isinstance(w, int) and isinstance(h, int)
+        # if not value:
+        #     self.data[y][x] = default_item()
+        #     return
+        # text, (w, h) = value
+        # assert isinstance(text, str) and isinstance(w, int) and isinstance(h, int)
         self.data[y][x] = value
 
 

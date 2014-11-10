@@ -20,3 +20,12 @@ class MatrixTest(unittest.TestCase):
         self.assertNotIn('Fish', self.matrix)
         self.assertNotIn('whoops', self.matrix)
 
+    def test_getitem(self):
+        self.assertEqual(self.matrix[0,1], 'Aye')
+        self.assertEqual(self.matrix[2,0], 'Three')
+        self.assertNotEqual(self.matrix[1,1], 'See')
+
+    def test_setitem(self):
+        newval = 'NEW!!'
+        self.matrix[2,1] = newval
+        self.assertEqual(self.matrix.data[1][2], newval)
