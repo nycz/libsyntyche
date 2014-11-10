@@ -61,7 +61,7 @@ class Matrix():
         del self.data[pos]
 
     def remove_col(self, pos):
-        for n in range(len(self.data)):
+        for n in range(self.count_rows()):
             del self.data[n][pos]
 
     def move_row(self, oldpos, newpos):

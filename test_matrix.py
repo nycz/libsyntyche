@@ -51,7 +51,6 @@ class MatrixTest(unittest.TestCase):
 
     def test_add_row(self):
         newrow = [default_item()]*3
-
         data = [
             ['One', 'Two', 'Three'],
             newrow,
@@ -95,4 +94,19 @@ class MatrixTest(unittest.TestCase):
             [default_item(), 'Aye', default_item(), 'Bee', 'See', default_item()]
         ]
         self.matrix.add_col()
+        self.assertEqual(self.matrix.data, data)
+
+    def test_remove_row(self):
+        data = [
+            ['One', 'Two', 'Three']
+        ]
+        self.matrix.remove_row(1)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_remove_col(self):
+        data = [
+            ['One', 'Two'],
+            ['Aye', 'Bee']
+        ]
+        self.matrix.remove_col(2)
         self.assertEqual(self.matrix.data, data)
