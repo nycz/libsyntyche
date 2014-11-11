@@ -236,3 +236,119 @@ class MatrixMoveTest(unittest.TestCase):
         ]
         self.matrix.move_col(0,3)
         self.assertEqual(self.matrix.data, data)
+
+
+class MatrixOffsetTest(unittest.TestCase):
+
+    def setUp(self):
+        data = [
+            ['One', 'Two', 'Three'],
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix = Matrix(default_item, data, offset=1)
+
+    def test_getitem(self):
+        self.assertEqual(self.matrix[1,2], 'Aye')
+        self.assertEqual(self.matrix[3,1], 'Three')
+        self.assertNotEqual(self.matrix[1,1], 'See')
+
+    def test_setitem(self):
+        newval = 'NEW!!'
+        self.matrix[2,1] = newval
+        self.assertEqual(self.matrix.data[0][1], newval)
+
+    def test_add_row(self):
+        newrow = [default_item()]*3
+        data = [
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.add_row(2)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            newrow,
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.add_row(1)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            newrow,
+            ['One', 'Two', 'Three'],
+            newrow,
+            ['Aye', 'Bee', 'See'],
+            newrow
+        ]
+        self.matrix.add_row()
+        self.assertEqual(self.matrix.data, data)
+
+    def test_add_col(self):
+        data = [
+            ['One', default_item(), 'Two', 'Three'],
+            ['Aye', default_item(), 'Bee', 'See']
+        ]
+        self.matrix.add_col(2)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            [default_item(), 'One', default_item(), 'Two', 'Three'],
+            [default_item(), 'Aye', default_item(), 'Bee', 'See']
+        ]
+        self.matrix.add_col(1)
+        self.assertEqual(self.matrix.data, data)
+        data = [
+            [default_item(), 'One', default_item(), 'Two', 'Three', default_item()],
+            [default_item(), 'Aye', default_item(), 'Bee', 'See', default_item()]
+        ]
+        self.matrix.add_col()
+        self.assertEqual(self.matrix.data, data)
+
+    def test_remove_row(self):
+        data = [
+            ['One', 'Two', 'Three']
+        ]
+        self.matrix.remove_row(2)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_remove_col(self):
+        data = [
+            ['One', 'Two'],
+            ['Aye', 'Bee']
+        ]
+        self.matrix.remove_col(3)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_row_down(self):
+        data = [
+            ['One', 'Two', 'Three'],
+            ['Aye', 'Bee', 'See'],
+            ['One', 'Two', 'Three']
+        ]
+        self.matrix.copy_row(1,3)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_row_up(self):
+        data = [
+            ['Aye', 'Bee', 'See'],
+            ['One', 'Two', 'Three'],
+            ['Aye', 'Bee', 'See']
+        ]
+        self.matrix.copy_row(2,1)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_col_left(self):
+        data = [
+            ['One', 'Three', 'Two', 'Three'],
+            ['Aye', 'See', 'Bee', 'See'],
+        ]
+        self.matrix.copy_col(3,2)
+        self.assertEqual(self.matrix.data, data)
+
+    def test_copy_col_right(self):
+        data = [
+            ['One', 'Two', 'Three', 'One'],
+            ['Aye', 'Bee', 'See', 'Aye'],
+        ]
+        self.matrix.copy_col(1,4)
+        self.assertEqual(self.matrix.data, data)
