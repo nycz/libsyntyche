@@ -32,6 +32,9 @@ class Matrix():
     def flip_orientation(self):
         self.data = list(map(list, zip(*self.data)))
 
+    def has_coord(self, x, y):
+        return x-self.offset in range(self.count_cols()) and y-self.offset in range(self.count_rows())
+
     def count_rows(self):
         return len(self.data)
 

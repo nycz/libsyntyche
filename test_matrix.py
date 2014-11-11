@@ -43,6 +43,11 @@ class MatrixGenericTest(unittest.TestCase):
         ]
         self.assertEqual(self.matrix.data, data)
 
+    def test_has_coord(self):
+        self.assertTrue(self.matrix.has_coord(1, 0))
+        self.assertTrue(self.matrix.has_coord(2, 1))
+        self.assertFalse(self.matrix.has_coord(3, 1))
+
     def test_count_rows(self):
         self.assertEqual(self.matrix.count_rows(), 2)
 
@@ -256,6 +261,12 @@ class MatrixOffsetTest(unittest.TestCase):
         newval = 'NEW!!'
         self.matrix[2,1] = newval
         self.assertEqual(self.matrix.data[0][1], newval)
+
+    def test_has_coord(self):
+        self.assertTrue(self.matrix.has_coord(1, 1))
+        self.assertTrue(self.matrix.has_coord(3, 2))
+        self.assertFalse(self.matrix.has_coord(5, 1))
+        self.assertFalse(self.matrix.has_coord(2, 0))
 
     def test_add_row(self):
         newrow = [default_item()]*3
