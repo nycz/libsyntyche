@@ -5,138 +5,131 @@ import os
 from os.path import exists, join
 import re
 
-from common import read_json, read_file
-from tagsystem import compile_tag_filter, match_tag_filter
-
-# attributedata = {
-#     "filter": (filter_tags, filter_text, filter_number),
-#     "parser": (int, lambda x: frozenset(map(lambda y: y.strip(), x.split(',')))),
-#     "sortable": bool,
-# }
+from libsyntyche.common import read_json, read_file
+from libsyntyche.tagsystem import compile_tag_filter, match_tag_filter
 
 
+def parse_text(rawtext):
+    return rawtext
 
-def update_entry(entries, index, attribute, newvalue):
-    entry = entries[index]._replace({attribute: newvalue})
-    return entries[:index] + (entry,) + entries[index+1:]
+def parse_tags(rawtext):
+    return frozenset(re.split(r'\s*,\s*', rawtext))
 
 
-def edit_entry(index, entries, attribute, rawnewvalue, attributedata, undostack):
-    # if index not in range(len(entries)):
-    #     raise IndexError('Entry index out of bounds')
-    # if attribute not in attributedata:
-    #     raise KeyError('Attribute doesn\'t exist')
+def edit_entry(index, entries, attribute, rawnewvalue, attributedata):
+    """
+    Edit a single entry and return the updated tuple of entries.
+    """
     if attributedata[attribute]['parser'] is None:
         raise AttributeError('Attribute is read-only')
     newvalue = attributedata[attribute]['parser'](rawnewvalue)
-    return update_entry(entries, index, attribute, newvalue)
-    
-def replace_tags(oldtag, newtag, entries, attribute, attributedata):
-    pass
+    entry = entries[index]._replace(**{attribute: newvalue})
+    return entries[:index] + (entry,) + entries[index+1:]
+    # return update_entry(entries, index, attribute, newvalue)
 
-def undo():
-    pass
+def replace_tags(oldtagstr, newtagstr, entries, visible_entries, attribute):
+    """
+    Return a tuple where all instances of one tag is replaced by a new tag or
+    where a tag has been either added to or removed from all visible entries.
 
-# (entry, attribute, oldvalue)
+    If oldtagstr isn't specified (eg. empty), add the new tag
+    to all visible entries.
 
+    If newtagstr isn't specified, remove the old tag from all visible entries.
 
+    If both are specified, replace the old tag with the new tag, but only in
+    the (visible) entries where old tag exists.
+    """
+    # Failsafe!
+    if not oldtagstr and not newtagstr:
+        raise AssertionError('No tags specified, nothing to do')
+    visible_entry_ids = next(zip(*visible_entries))
+    makeset = lambda x: frozenset([x] if x else [])
+    oldtag, newtag = makeset(oldtagstr), makeset(newtagstr)
+    def replace_tag(entry):
+        # Only replace in visible entries
+        # and in entries where the old tag exists, if it's specified
+        if entry[0] not in visible_entry_ids \
+                or (oldtagstr and oldtagstr not in getattr(entry, attribute)):
+            return entry
+        tags = (getattr(entry, attribute) - oldtag) | newtag
+        return entry._replace(**{attribute: tags})
+    return tuple(map(replace_tag, entries))
 
-# filters = (
-#   ('attributename', '>92759<=49792'),
-#   ('attrlol', 'fishies'),
-#   ('bloopbleep', '(fish, lol) | nope')
-# )
+def undo(entries, undoitems):
+    for item in undoitems:
+        index = item[0]
+        entries = entries[:index] + (item,) + entries[index+1:]
+    return entries
 
-def filter_text(attribute, f, entries):
-    return filter(lambda entry: f in getattr(entry, attribute), entries)
+def get_diff(oldentries, newentries):
+    """
+    Return a tuple of pairs (old, new) with entries that has been changed.
+    """
+    diffpairs = ((oldentry, newentry)\
+                 for oldentry, newentry in zip(oldentries, newentries)\
+                 if newentry != oldentry)
+    return tuple(zip(*diffpairs))
 
-def filter_number(attribute, f, entries):
+def filter_text(attribute, payload, entries):
+    """
+    Return a tuple with the entries that include the specified text
+    in the payload variable. The filtering in case-insensitive.
+    """
+    return (entry for entry in entries\
+            if payload.lower() in getattr(entry, attribute).lower())
+
+def filter_number(attribute, payload, entries):
     from operator import lt,gt,le,ge
     compfuncs = {'<':lt, '>':gt, '<=':le, '>=':ge}
     expressions = [(compfuncs[m.group(1)], int(m.group(2).replace('k','000')))
-                   for m in re.finditer(r'([<>][=]?)(\d+k?)', f)]
+                   for m in re.finditer(r'([<>][=]?)(\d+k?)', payload)]
     def matches(entry):
         return all(fn(getattr(entry, attribute), num) for fn, num in expressions)
     return filter(matches, entries)
 
-def filter_tags(attribute, f, entries):
+def filter_tags(attribute, payload, entries):
     tag_filter = compile_tag_filter(payload)
     return (entry for entry in entries \
             if match_tag_filter(tag_filter, getattr(entry, attribute)))
 
-
-
 def filter_entries(entries, filters, attributedata):
+    """
+    Return a tuple with all entries that match the filters.
+
+    filters is an iterable with (attribute, payload) pairs where payload is
+    the string to be used with the attribute's specified filter function.
+    """
     filtered_entries = entries
-    filterfuncs = {'text': filter_text, 'number': filter_number, 'tags': filter_tags}
-    for attribute, f in filters:
-        fntext = attributedata[attribute]['filter']
-        if fntext is None:
-            raise AttributeError('Attribute can\'t be filtered on')
-        if fntext not in ('text', 'tags', 'number'):
-            raise KeyError('Unknown filter: {}'.format(fntext))
-        fn = filterfuncs[fntext]
-        filtered_entries = fn(attribute, f, filtered_entries)
-        # filtered_entries = filter(partial(fn, attribute, f), filtered_entries)
-    return filtered_entries
+    for attribute, payload in filters:
+        func = attributedata[attribute]['filter']
+        filtered_entries = func(attribute, payload, filtered_entries)
+    return tuple(filtered_entries)
 
-def sort_entries(entries, attribute, attributedata, reverse=False):
-    if not attributedata[attribute]['sortable']:
-        raise AttributeError('Attribute can\'t be sorted by')
-    return sorted(entries, attrgetter(attribute), reverse)
+def sort_entries(entries, attribute, reverse):
+    return tuple(sorted(entries, key=attrgetter(attribute), reverse=reverse))
 
+def generate_visible_entries(entries, filters, attributedata, sort_by, reverse):
+    filtered_entries = filter_entries(entries, filters, attributedata)
+    return sort_entries(filtered_entries, sort_by, reverse)
 
 
 # Decoratorstuff
 
 def generate_entrylist(fn):
+    filterfuncs = {'text': filter_text, 'number': filter_number, 'tags': filter_tags}
+    parserfuncs = {'text': parse_text, 'tags': parse_tags}
     def makedict(d):
-        return {x:d.get(x, None) for x in ('filter', 'parser', 'sortable')}
+        if 'filter' in d:
+            d['filter'] = filterfuncs[d['filter']]
+        if 'parser' in d:
+            d['parser'] = parserfuncs[d['parser']]
+        return {x:d.get(x, None) for x in ('filter', 'parser')}
 
     def entrywrapper(*args, **kwargs):
         attributes, entries = fn(*args, **kwargs)
         attributedata = {name:makedict(attr) for name, attr in attributes}
-        Entry = namedtuple('Entry', next(zip(*attributes)))
-        entrylist = (Entry(*args) for args in entries)
+        Entry = namedtuple('Entry', ('index',) + next(zip(*attributes)))
+        entrylist = (Entry(n, *args) for n, args in enumerate(entries))
         return attributedata, tuple(entrylist)
     return entrywrapper
-
-@generate_entrylist
-def index_stories(path):
-    """
-    Find all files that match the filter, and return a sorted list
-    of them with wordcount, paths and all data from the metadata file.
-    """
-
-    attributes = (
-        ('title', {'filter': 'text', 'sortable': True}),
-        ('tags', {'filter': 'tags'}),
-        ('description', {'filter': 'text'}),
-        ('length', {'filter': 'number', 'sortable': True}),
-        ('file', {}),
-        ('metadatafile', {}),
-    )
-    metafile = lambda dirpath, fname: join(dirpath, '.'+fname+'.metadata')
-    files = ((read_json(metafile(dirpath, fname)),
-             join(dirpath, fname), metafile(dirpath, fname))
-             for dirpath, _, filenames in os.walk(path)
-             for fname in filenames
-             if os.path.exists(metafile(dirpath, fname)))
-
-
-    entries = ((metadata['title'],
-                frozenset(metadata['tags']),
-                metadata['description'],
-                len(re.findall(r'\S+', read_file(fname))),
-                fname,
-                metadatafile)
-               for metadata, fname, metadatafile in files)
-
-    return attributes, entries
-
-
-
-
-if __name__ == '__main__':
-    attributedata, entries = index_stories('/home/nycz/stories')
-    print(*entries, sep='\n\n')
