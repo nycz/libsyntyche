@@ -76,8 +76,12 @@ def filter_text(attribute, payload, entries):
     Return a tuple with the entries that include the specified text
     in the payload variable. The filtering in case-insensitive.
     """
-    return (entry for entry in entries\
-            if payload.lower() in getattr(entry, attribute).lower())
+    if not payload:
+        return (entry for entry in entries\
+                if not getattr(entry, attribute))
+    else:
+        return (entry for entry in entries\
+                if payload.lower() in getattr(entry, attribute).lower())
 
 def filter_number(attribute, payload, entries):
     from operator import lt,gt,le,ge
@@ -89,9 +93,13 @@ def filter_number(attribute, payload, entries):
     return filter(matches, entries)
 
 def filter_tags(attribute, payload, entries):
-    tag_filter = compile_tag_filter(payload)
-    return (entry for entry in entries \
-            if match_tag_filter(tag_filter, getattr(entry, attribute)))
+    if not payload:
+        return (entry for entry in entries \
+                if not getattr(entry, attribute))
+    else:
+        tag_filter = compile_tag_filter(payload)
+        return (entry for entry in entries \
+                if match_tag_filter(tag_filter, getattr(entry, attribute)))
 
 def filter_entries(entries, filters, attributedata):
     """
