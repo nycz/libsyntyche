@@ -96,6 +96,16 @@ class GenericTerminal(QtGui.QWidget):
     def setFocus(self):
         self.input_term.setFocus()
 
+    def clear_input(self):
+        self.input_term.setText('')
+
+    def clear_output(self):
+        self.output_term.setText('')
+
+    def clear(self):
+        self.clear_input()
+        self.clear_output()
+
     def print_(self, msg):
         self.output_term.setText(str(msg))
         self.show()
