@@ -200,9 +200,7 @@ class GenericTerminal(QtGui.QWidget):
         elif self.ac_suggestions:
             if self.ac_reset_flag:
                 if reverse:
-                    text = self.ac_suggestions[len(self.ac_suggestions)-1]
-                else:
-                    text = self.ac_suggestions[0]
+                    self.ac_index = len(self.ac_suggestions)-1
                 self.ac_reset_flag = False
             else:
                 if reverse:
@@ -213,7 +211,7 @@ class GenericTerminal(QtGui.QWidget):
                     self.ac_index += 1
                     if self.ac_index == len(self.ac_suggestions):
                         self.ac_index = 0
-                text = self.ac_suggestions[self.ac_index]
+            text = self.ac_suggestions[self.ac_index]
         return text
 
     def get_ac_suggestions(self, prefix):
