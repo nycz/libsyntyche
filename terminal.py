@@ -4,20 +4,22 @@ from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 from libsyntyche.common import kill_theming
 
 class GenericTerminalInputBox(QtGui.QLineEdit):
-    tab_pressed = pyqtSignal()
+    tab_pressed = pyqtSignal(bool)
     reset_ac_suggestions = pyqtSignal()
     reset_history_travel = pyqtSignal()
     history_up = pyqtSignal()
     history_down = pyqtSignal()
 
     # This has to be here, keyPressEvent does not capture tab press
-    def event(self, event):
-        if event.type() == QEvent.KeyPress and\
-                    event.modifiers() == Qt.NoModifier:
-            if event.key() == Qt.Key_Tab:
-                self.tab_pressed.emit()
+    def event(self, ev):
+        if ev.type() == QEvent.KeyPress:
+            if ev.key() == Qt.Key_Backtab and ev.modifiers() == Qt.ShiftModifier:
+                self.tab_pressed.emit(True)
                 return True
-        return super().event(event)
+            elif ev.key() == Qt.Key_Tab and ev.modifiers() == Qt.NoModifier:
+                self.tab_pressed.emit(False)
+                return True
+        return super().event(ev)
 
     def keyPressEvent(self, event):
         if event.text() or event.key() in (Qt.Key_Left, Qt.Key_Right):
@@ -86,6 +88,7 @@ class GenericTerminal(QtGui.QWidget):
         # Autocomplete
         self.ac_suggestions = []
         self.ac_index = 0
+        self.ac_reset_flag = True
         self.input_term.tab_pressed.connect(self.autocomplete)
         self.input_term.reset_ac_suggestions.connect(self.reset_ac_suggestions)
 
@@ -177,14 +180,14 @@ class GenericTerminal(QtGui.QWidget):
 
     # ==== Autocomplete ========================== #
 
-    def autocomplete(self):
+    def autocomplete(self, reverse):
         """
         Main autocomplete functions.
         Is called whenever tab is pressed.
         """
         pass
 
-    def run_autocompletion(self, text):
+    def run_autocompletion(self, text, reverse):
         # Generate new suggestions if none exist
         if not self.ac_suggestions:
             self.ac_suggestions = self.get_ac_suggestions(text)
@@ -195,10 +198,22 @@ class GenericTerminal(QtGui.QWidget):
             self.reset_ac_suggestions()
         # Otherwise start scrolling through 'em
         elif self.ac_suggestions:
-            text = self.ac_suggestions[self.ac_index]
-            self.ac_index += 1
-            if self.ac_index == len(self.ac_suggestions):
-                self.ac_index = 0
+            if self.ac_reset_flag:
+                if reverse:
+                    text = self.ac_suggestions[len(self.ac_suggestions)-1]
+                else:
+                    text = self.ac_suggestions[0]
+                self.ac_reset_flag = False
+            else:
+                if reverse:
+                    self.ac_index -= 1
+                    if self.ac_index == -1:
+                        self.ac_index = len(self.ac_suggestions)-1
+                else:
+                    self.ac_index += 1
+                    if self.ac_index == len(self.ac_suggestions):
+                        self.ac_index = 0
+                text = self.ac_suggestions[self.ac_index]
         return text
 
     def get_ac_suggestions(self, prefix):
@@ -211,6 +226,7 @@ class GenericTerminal(QtGui.QWidget):
         """
         self.ac_suggestions = []
         self.ac_index = 0
+        self.ac_reset_flag = True
 
     # ==== Useful commands ======================= #
 
