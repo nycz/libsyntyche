@@ -1,5 +1,18 @@
 import re
 
+def _expand_macros(string, macros):
+    while True:
+        str_macros = re.findall('@[^(),|]+', string)
+        if not str_macros:
+            break
+        for m in str_macros:
+            mname = m.strip().lstrip('@')
+            if mname not in macros:
+                raise SyntaxError('Unknown tag macro')
+            else:
+                string = string.replace(m, '(' + macros[mname] + ')')
+    return string
+
 def _tokenize(string):
     """
     Create a list of tokens from the string of a command.
@@ -79,9 +92,6 @@ def _match(tag, oldtags):
     # Otherwise it's fine
     return True
 
-def compile_tag_filter(string):
-    return _read_from(_tokenize(string))
-
 def _parse(exp, oldtags):
     """
     Parse the actual command to see if it matches the tags.
@@ -105,6 +115,9 @@ def _parse(exp, oldtags):
     else:
         raise SyntaxError('Invalid expression')
 
+
+def compile_tag_filter(string, macros):
+    return _read_from(_tokenize(_expand_macros(string, macros)))
 
 def match_tag_filter(tag_filter, oldtags):
     return _parse(tag_filter, oldtags)

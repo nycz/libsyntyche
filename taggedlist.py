@@ -92,16 +92,16 @@ def filter_number(attribute, payload, entries):
         return all(fn(getattr(entry, attribute), num) for fn, num in expressions)
     return filter(matches, entries)
 
-def filter_tags(attribute, payload, entries):
+def filter_tags(attribute, payload, entries, tagmacros):
     if not payload:
         return (entry for entry in entries \
                 if not getattr(entry, attribute))
     else:
-        tag_filter = compile_tag_filter(payload)
+        tag_filter = compile_tag_filter(payload, tagmacros)
         return (entry for entry in entries \
                 if match_tag_filter(tag_filter, getattr(entry, attribute)))
 
-def filter_entries(entries, filters, attributedata):
+def filter_entries(entries, filters, attributedata, tagmacros):
     """
     Return a tuple with all entries that match the filters.
 
@@ -111,14 +111,17 @@ def filter_entries(entries, filters, attributedata):
     filtered_entries = entries
     for attribute, payload in filters:
         func = attributedata[attribute]['filter']
-        filtered_entries = func(attribute, payload, filtered_entries)
+        if func == filter_tags:
+            filtered_entries = func(attribute, payload, filtered_entries, tagmacros)
+        else:
+            filtered_entries = func(attribute, payload, filtered_entries)
     return tuple(filtered_entries)
 
 def sort_entries(entries, attribute, reverse):
     return tuple(sorted(entries, key=attrgetter(attribute), reverse=reverse))
 
-def generate_visible_entries(entries, filters, attributedata, sort_by, reverse):
-    filtered_entries = filter_entries(entries, filters, attributedata)
+def generate_visible_entries(entries, filters, attributedata, sort_by, reverse, tagmacros):
+    filtered_entries = filter_entries(entries, filters, attributedata, tagmacros)
     return sort_entries(filtered_entries, sort_by, reverse)
 
 
