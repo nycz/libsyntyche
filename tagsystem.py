@@ -24,7 +24,7 @@ def _tokenize(string):
     for c in nospace:
         if c in '(),|':
             if buf:
-                if c == '(':
+                if c == '(' and buf != '-':
                     raise SyntaxError('Invalid syntax: invalid starting parenthesis')
                 tokens.append(buf)
                 buf = ''
@@ -39,19 +39,25 @@ def _tokenize(string):
         tokens.append(buf)
     return tokens + [')']
 
-def _read_from(tokens):
+
+def _read_from(tokens, invert=False):
     """
     Parse the tokens and return a nested list of ANDs and ORs and tags.
+
+    Also convert NOTs preceding parentheses to individual negative tags.
     """
     if not tokens:
         raise SyntaxError('No tokens')
     mode = None
     modes = {',':'AND', '|':'OR'}
     token = tokens.pop(0)
+    if token == '-':
+        token = tokens.pop(0)
+        invert = not invert
     if token == '(':
         parsedexp = []
         while tokens[0] != ')':
-            subexp = _read_from(tokens)
+            subexp = _read_from(tokens, invert)
             if subexp in (',', '|'):
                 if mode is not None and modes[subexp] != mode:
                     raise SyntaxError('Mixed separators')
@@ -59,10 +65,15 @@ def _read_from(tokens):
             else:
                 parsedexp.append(subexp)
         tokens.pop(0)
+        if invert:
+            # invert mode
+            mode = 'AND' if mode == 'OR' else 'OR'
         return [mode] + parsedexp
     elif token == ')':
         raise SyntaxError('Unexpected )')
     else:
+        if invert and token not in (',', '|'):
+            token = token[1:] if token.startswith('-') else '-'+token
         return token
 
 def _match(tag, oldtags):
