@@ -13,7 +13,7 @@ def parse_text(rawtext):
     return rawtext
 
 def parse_tags(rawtext):
-    return frozenset(re.split(r'\s*,\s*', rawtext))
+    return frozenset(re.split(r'\s*,\s*', rawtext)) - frozenset([''])
 
 
 def edit_entry(index, entries, attribute, rawnewvalue, attributedata):
