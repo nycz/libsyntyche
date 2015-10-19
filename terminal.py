@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 
@@ -78,6 +80,9 @@ class GenericTerminal(QtGui.QWidget):
         self.input_term.setFocus()
         self.input_term.returnPressed.connect(self.parse_command)
 
+        # Log
+        self.log = []
+
         # History
         self.history = ['']
         self.history_index = 0
@@ -96,6 +101,12 @@ class GenericTerminal(QtGui.QWidget):
         # options is an optional dict with - surprise - options
         self.commands = {}
 
+    def add_to_log(self, msgtype, msg):
+        self.log.append((datetime.now(), msgtype, msg))
+
+    def get_log(self):
+        return self.log
+
     def setFocus(self):
         self.input_term.setFocus()
 
@@ -111,10 +122,12 @@ class GenericTerminal(QtGui.QWidget):
 
     def print_(self, msg):
         self.output_term.setText(str(msg))
+        self.add_to_log('msg', str(msg))
         self.show()
 
     def error(self, msg):
         self.output_term.setText('Error: ' + msg)
+        self.add_to_log('error', str(msg))
         self.show()
 
     def prompt(self, msg):
@@ -129,6 +142,7 @@ class GenericTerminal(QtGui.QWidget):
         text = self.input_term.text().strip()
         if not text:
             return
+        self.add_to_log('cmd', text)
         self.add_history(text)
         self.input_term.setText('')
         self.output_term.setText('')
