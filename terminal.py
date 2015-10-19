@@ -107,6 +107,20 @@ class GenericTerminal(QtGui.QWidget):
     def get_log(self):
         return self.log
 
+    def get_formatted_log(self):
+        def format_log_entry(msgtype, msg):
+            if msgtype == 'cmd':
+                return '   >>  ' + msg
+            elif msgtype == 'error':
+                return '  <<   Error: ' + msg
+            else:
+                return '  <<   ' + msg
+        text = '\n'.join(
+            ts.strftime('%H:%M:%S') + format_log_entry(msgtype, msg)
+            for ts, msgtype, msg in self.log
+        )
+        return text if text else '[empty log]'
+
     def setFocus(self):
         self.input_term.setFocus()
 
