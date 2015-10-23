@@ -9,28 +9,30 @@ import shutil
 import sys
 import traceback
 
+from typing import Any, Callable
 
 # ============= IO/file handling ====================
-def read_json(path):
+def read_json(path: str) -> str:
     return json.loads(read_file(path))
 
-def write_json(path, data, sort_keys=True):
-    write_file(path, json.dumps(data, ensure_ascii=False, indent=2,
-               sort_keys=sort_keys))
+def write_json(path: str, data: Any, sort_keys: bool = True) -> None:
+    write_file(path, json.dumps(data, ensure_ascii=False,
+                                indent=2,
+                                sort_keys=sort_keys))
 
-def read_file(path):
+def read_file(path: str) -> str:
     with open(path, encoding='utf-8') as f:
         data = f.read()
     return data
 
-def write_file(path, data):
+def write_file(path: str, data: str) -> None:
     with open(path, 'w', encoding='utf-8') as f:
         f.write(data)
 
-def local_path(path):
+def local_path(path: str) -> str:
     return os.path.join(sys.path[0], path)
 
-def make_sure_config_exists(config, defconfig):
+def make_sure_config_exists(config: str, defconfig: str) -> None:
     """
     Check if the file exists, otherwise copy the default
     file to the path instead, creating directories if needded
@@ -45,23 +47,24 @@ def make_sure_config_exists(config, defconfig):
 
 
 # ============= Misc functions ======================
-def print_traceback():
+def print_traceback() -> None:
     traceback.print_exc(file=sys.stdout)
 # ===================================================
 
 
 # ============= Qt Specific =========================
-def kill_theming(layout):
+def kill_theming(layout) -> None:
     layout.setMargin(0)
     layout.setSpacing(0)
 
-def set_hotkey(key, target, callback):
+def set_hotkey(key: str, target: Any, callback: Callable[[Any], Any]) -> None:
     from PyQt4 import QtGui
     QtGui.QShortcut(QtGui.QKeySequence(key), target, callback)
 # ===================================================
 
 
 # ============= Enhanced CSS ========================
+# DEPRECATED AS FUCK
 def parse_stylesheet(data):
     """
     Return a valid CSS or Qt CSS stylesheet.
