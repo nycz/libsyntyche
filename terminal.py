@@ -3,7 +3,7 @@ from datetime import datetime
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from libsyntyche.common import kill_theming
 
