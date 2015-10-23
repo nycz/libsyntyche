@@ -9,6 +9,8 @@ else:
 
 from PyQt4 import QtCore, QtGui, QtWebKit
 
+from typing import Optional
+
 from libsyntyche.common import read_file
 
 html_boilerplate = """
@@ -83,10 +85,14 @@ pre code, pre tt {
 
 class FileViewer(QtWebKit.QWebView):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QtGui.QWidget) -> None:
         super().__init__(parent)
 
-    def set_page(self, text=None, fname=None, css=default_css, format='auto'):
+    def set_page(self,
+                 text: Optional[str] = None,
+                 fname: Optional[str] = None,
+                 css: Optional[str] = default_css,
+                 format: str = 'auto') -> None:
         assert (text and not fname) or (fname and not text)
         if not css:
             css = default_css
@@ -96,7 +102,7 @@ class FileViewer(QtWebKit.QWebView):
         self.setHtml(page)
 
 
-def generate_page(text, fname, css, format):
+def generate_page(text: str, fname: str, css: str, format: str) -> str:
     formats = ('rawtext', 'markdown', 'html')
     fallback = 'rawtext'
     # Figure out the format
