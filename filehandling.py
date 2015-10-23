@@ -2,37 +2,38 @@ import os.path
 import subprocess
 import sys
 
+import typing
 
 class FileHandler():
-    def error(self, text):
+    def error(self, text: str) -> None:
         raise NotImplementedError
 
-    def prompt(self, text):
+    def prompt(self, text:str) -> None:
         raise NotImplementedError
 
-    def is_modified(self):
+    def is_modified(self) -> bool:
         raise NotImplementedError
 
-    def post_new(self):
+    def post_new(self) -> None:
         raise NotImplementedError
 
-    def post_save(self, saved_filename):
+    def post_save(self, saved_filename: str) -> None:
         raise NotImplementedError
 
-    def write_file(self, filename):
+    def write_file(self, filename: str) -> None:
         raise NotImplementedError
 
-    def dirty_window_and_start_in_new_process(self):
+    def dirty_window_and_start_in_new_process(self) -> bool:
         raise NotImplementedError
 
 
-    def request_new_file(self, force=False):
+    def request_new_file(self, force: bool = False) -> None:
         success = self.new_file(force)
         if not success:
             self.error('Unsaved changes! Force new with n! or save first.')
 
 
-    def request_open_file(self, filename, force=False):
+    def request_open_file(self, filename: str, force: bool = False) -> None:
         if not os.path.isfile(filename):
             self.error('File not found!')
             return
@@ -46,12 +47,12 @@ class FileHandler():
             self.error('Unsaved changes! Force open with o! or save first.')
 
 
-    def request_save_file(self, filename='', force=False):
+    def request_save_file(self, filename: str = '', force: bool = False) -> None:
         if not filename:
             # Don't save if there's nothing to save
             if not self.is_modified():
                 return
-            if self.file_path:
+            if self.file_path: # type: ignore
                 result = self.save_file()
                 if not result:
                     self.error('File not saved! IOError!')
@@ -70,7 +71,7 @@ class FileHandler():
                 self.error('Invalid path')
 
 
-    def new_file(self, force=False):
+    def new_file(self, force: bool = False) -> bool:
         """
         Main new file function
 
@@ -86,7 +87,7 @@ class FileHandler():
             return False
 
 
-    def open_file(self, filename):
+    def open_file(self, filename: str) -> bool:
         """
         Main open file function
 
@@ -95,7 +96,7 @@ class FileHandler():
         raise NotImplementedError
 
 
-    def save_file(self, filename=''):
+    def save_file(self, filename: str = '') -> bool:
         """
         Main save file function
 
@@ -106,7 +107,7 @@ class FileHandler():
         if filename:
             saved_filename = filename
         else:
-            saved_filename = self.file_path
+            saved_filename = self.file_path # type: ignore
 
         assert saved_filename.strip() != ''
 
