@@ -3,6 +3,8 @@ from datetime import datetime
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 
+from typing import Any, Callable, Dict, Tuple, Union
+
 from libsyntyche.common import kill_theming
 
 class GenericTerminalInputBox(QtGui.QLineEdit):
@@ -13,7 +15,7 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
     history_down = pyqtSignal()
 
     # This has to be here, keyPressEvent does not capture tab press
-    def event(self, ev):
+    def event(self, ev) -> bool:
         if ev.type() == QEvent.KeyPress:
             if ev.key() == Qt.Key_Backtab and ev.modifiers() == Qt.ShiftModifier:
                 self.tab_pressed.emit(True)
@@ -23,7 +25,7 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
                 return True
         return super().event(ev)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         if event.text() or event.key() in (Qt.Key_Left, Qt.Key_Right):
             QtGui.QLineEdit.keyPressEvent(self, event)
             self.reset_ac_suggestions.emit()
@@ -36,7 +38,7 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
             return super().keyPressEvent(event)
 
 class GenericTerminalOutputBox(QtGui.QLineEdit):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.animate = False
         self.timer = QTimer(self)
@@ -44,17 +46,17 @@ class GenericTerminalOutputBox(QtGui.QLineEdit):
         self.timer.timeout.connect(self._add_character)
         self.buffer = ''
 
-    def set_timer_interval(self, num):
+    def set_timer_interval(self, num: int) -> None:
         self.timer.setInterval(num)
 
-    def _add_character(self):
+    def _add_character(self) -> None:
         if not self.buffer:
             self.timer.stop()
             return
         super().setText(self.text() + self.buffer[0])
         self.buffer = self.buffer[1:]
 
-    def setText(self, text):
+    def setText(self, text: str) -> None:
         if not self.animate or not text:
             super().setText(text)
             return
@@ -64,7 +66,10 @@ class GenericTerminalOutputBox(QtGui.QLineEdit):
             self.timer.start()
 
 class GenericTerminal(QtGui.QWidget):
-    def __init__(self, parent, input_term_constructor, output_term_constructor):
+    def __init__(self,
+                 parent: QtGui.QWidget,
+                 input_term_constructor: Callable[[], GenericTerminalInputBox],
+                 output_term_constructor: Callable[[], GenericTerminalOutputBox]) -> None:
         super().__init__(parent)
 
         layout = QtGui.QVBoxLayout(self)
@@ -81,7 +86,7 @@ class GenericTerminal(QtGui.QWidget):
         self.input_term.returnPressed.connect(self.parse_command)
 
         # Log
-        self.log = []
+        self.log = [] # type: List[Tuple[datetime, str, str]]
 
         # History
         self.history = ['']
@@ -91,7 +96,7 @@ class GenericTerminal(QtGui.QWidget):
         self.input_term.history_down.connect(self.history_down)
 
         # Autocomplete
-        self.ac_suggestions = []
+        self.ac_suggestions = [] # type: List[str]
         self.ac_index = 0
         self.ac_reset_flag = True
         self.input_term.tab_pressed.connect(self.autocomplete)
@@ -99,16 +104,16 @@ class GenericTerminal(QtGui.QWidget):
 
         # Each post in self.commands is (callback/signal, helptext[, options])
         # options is an optional dict with - surprise - options
-        self.commands = {}
+        self.commands = {} # type: Any
 
-    def add_to_log(self, msgtype, msg):
+    def add_to_log(self, msgtype: str, msg: str) -> None:
         self.log.append((datetime.now(), msgtype, msg))
 
-    def get_log(self):
+    def get_log(self) -> List[Tuple[Any, str, str]]:
         return self.log
 
-    def get_formatted_log(self):
-        def format_log_entry(msgtype, msg):
+    def get_formatted_log(self) -> str:
+        def format_log_entry(msgtype: str, msg: str):
             if msgtype == 'cmd':
                 return '   >>  ' + msg
             elif msgtype == 'error':
@@ -121,38 +126,38 @@ class GenericTerminal(QtGui.QWidget):
         )
         return text if text else '[empty log]'
 
-    def setFocus(self):
+    def setFocus(self) -> None:
         self.input_term.setFocus()
 
-    def clear_input(self):
+    def clear_input(self) -> None:
         self.input_term.setText('')
 
-    def clear_output(self):
+    def clear_output(self) -> None:
         self.output_term.setText('')
 
-    def clear(self):
+    def clear(self) -> None:
         self.clear_input()
         self.clear_output()
 
-    def print_(self, msg):
+    def print_(self, msg: Any) -> None:
         self.output_term.setText(str(msg))
         self.add_to_log('msg', str(msg))
         self.show()
 
-    def error(self, msg):
+    def error(self, msg: Any) -> None:
         self.output_term.setText('Error: ' + msg)
         self.add_to_log('error', str(msg))
         self.show()
 
-    def prompt(self, msg):
+    def prompt(self, msg: str) -> None:
         self.input_term.setText(msg)
         self.input_term.setFocus()
         self.show()
 
-    def command_parsing_injection(self, arg):
+    def command_parsing_injection(self, arg: str) -> bool:
         pass
 
-    def parse_command(self):
+    def parse_command(self) -> None:
         text = self.input_term.text().strip()
         if not text:
             return
@@ -187,35 +192,35 @@ class GenericTerminal(QtGui.QWidget):
 
     # ==== History =============================== #
 
-    def history_up(self):
+    def history_up(self) -> None:
         if self.history_index < len(self.history)-1:
             self.history_index += 1
         self.input_term.setText(self.history[self.history_index])
 
-    def history_down(self):
+    def history_down(self) -> None:
         if self.history_index > 0:
             self.history_index -= 1
         self.input_term.setText(self.history[self.history_index])
 
-    def add_history(self, text):
+    def add_history(self, text: str) -> None:
         self.history[0] = text
         self.history.insert(0, '')
 
-    def reset_history_travel(self):
+    def reset_history_travel(self) -> None:
         self.history_index = 0
         self.history[self.history_index] = self.input_term.text()
 
 
     # ==== Autocomplete ========================== #
 
-    def autocomplete(self, reverse):
+    def autocomplete(self, reverse: bool) -> None:
         """
         Main autocomplete functions.
         Is called whenever tab is pressed.
         """
         pass
 
-    def run_autocompletion(self, text, reverse):
+    def run_autocompletion(self, text: str, reverse: bool) -> str:
         # Generate new suggestions if none exist
         if not self.ac_suggestions:
             self.ac_suggestions = self.get_ac_suggestions(text)
@@ -242,10 +247,10 @@ class GenericTerminal(QtGui.QWidget):
             text = self.ac_suggestions[self.ac_index]
         return text
 
-    def get_ac_suggestions(self, prefix):
+    def get_ac_suggestions(self, prefix: str) -> List[str]:
         return []
 
-    def reset_ac_suggestions(self):
+    def reset_ac_suggestions(self) -> None:
         """
         Reset the list of suggestions if another button than tab
         has been pressed.
@@ -256,7 +261,7 @@ class GenericTerminal(QtGui.QWidget):
 
     # ==== Useful commands ======================= #
 
-    def cmd_help(self, arg):
+    def cmd_help(self, arg: str) -> None:
         if not arg:
             self.print_(' '.join(sorted(self.commands)))
         elif arg in self.commands:
