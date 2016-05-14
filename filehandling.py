@@ -8,13 +8,13 @@ class FileHandler():
     def error(self, text: str) -> None:
         raise NotImplementedError
 
-    def prompt(self, text:str) -> None:
+    def prompt(self, text: str) -> None:
         raise NotImplementedError
 
     def is_modified(self) -> bool:
         raise NotImplementedError
 
-    def post_new(self) -> None:
+    def post_new(self, filename: str = '') -> None:
         raise NotImplementedError
 
     def post_save(self, saved_filename: str) -> None:
@@ -27,8 +27,26 @@ class FileHandler():
         raise NotImplementedError
 
 
-    def request_new_file(self, force: bool = False) -> None:
-        success = self.new_file(force)
+    def request_new_file(self, force: bool = False, filename: str = '') -> None:
+        # filename is an optional arg at the end for compatibility purposes
+        # (aka if I force it stuff can blow up and I don't want that)
+        if filename:
+            # Can't open a directory, duh
+            if os.path.isdir(filename):
+                self.error('Path is a directory and can not be opened!')
+                return
+            # Quit if the file (or something else) exists
+            elif os.path.exists(filename):
+                self.error('File already exists, use o to open instead!')
+                return
+            # Quit if the filename/path doesn't seem to be valid
+            elif not os.path.isdir(os.path.dirname(filename)):
+                self.error('Invalid path')
+                return
+            else:
+                success = self.new_file(force, filename=filename)
+        else:
+            success = self.new_file(force)
         if not success:
             self.error('Unsaved changes! Force new with n! or save first.')
 
@@ -67,21 +85,26 @@ class FileHandler():
                 result = self.save_file(filename)
                 if not result:
                     self.error('File not saved! IOError!')
+            # If the file doesn't exist and the path doesn't include a dir, ragequit
             else:
                 self.error('Invalid path')
 
 
-    def new_file(self, force: bool = False) -> bool:
+    def new_file(self, force: bool = False, filename: str = '') -> bool:
         """
         Main new file function
 
         Return True on success, return False if failed
         """
         if self.dirty_window_and_start_in_new_process():
-            subprocess.Popen([sys.executable, sys.argv[0]])
+            subprocess.Popen([sys.executable, sys.argv[0]] + ([filename] if filename else []))
             return True
         elif not self.is_modified() or force:
-            self.post_new()
+            if filename:
+                self.post_new(filename=filename)
+            else:
+                # For compatibility purposes ugh
+                self.post_new()
             return True
         else:
             return False
