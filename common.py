@@ -15,10 +15,11 @@ from typing import Any, Callable
 def read_json(path: str) -> str:
     return json.loads(read_file(path))
 
-def write_json(path: str, data: Any, sort_keys: bool = True) -> None:
+def write_json(path: str, data: Any, sort_keys: bool = True, default=None) -> None:
     write_file(path, json.dumps(data, ensure_ascii=False,
                                 indent=2,
-                                sort_keys=sort_keys))
+                                sort_keys=sort_keys,
+                                default=default))
 
 def read_file(path: str) -> str:
     with open(path, encoding='utf-8') as f:
