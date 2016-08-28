@@ -92,7 +92,7 @@ class HTMLEntryView(EntryView):
     def set_stylesheet(self, path):
         self.webview.settings().setUserStyleSheetUrl(QtCore.QUrl('file:///{}'.format(path)))
 
-    def update_html(self, entries):
+    def update_html(self, entries, keep_position=False):
         def key(entry):
             id_, datadict = entry
             if not self.sortkey:
@@ -109,10 +109,15 @@ class HTMLEntryView(EntryView):
             self.format_entry(n, id_, entry)
             for n, (id_, entry) in enumerate(sortedvisibleentries)
         )
+        frame = self.webview.page().mainFrame()
+        pos = frame.scrollBarValue(QtCore.Qt.Vertical)
         self.webview.setHtml(self.pagetemplate.format('\n'.join(htmlentries)))
+        if keep_position:
+            frame.setScrollBarValue(QtCore.Qt.Vertical, pos)
 
-    def set_entries(self, entries):
-        self.update_html(entries)
+
+    def set_entries(self, entries, keep_position=False):
+        self.update_html(entries, keep_position=keep_position)
 
     def sort_entries(self, attribute, entries, reverse=False):
         if self.sortkey == attribute and self.sortreverse == reverse:
