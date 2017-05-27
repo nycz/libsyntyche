@@ -1,6 +1,6 @@
 import re
 
-from PyQt4.QtGui import QTextCursor, QTextDocument
+from PyQt5.QtGui import QTextCursor, QTextDocument
 
 
 class SearchAndReplaceable():

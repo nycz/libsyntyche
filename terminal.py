@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, pyqtBoundSignal, QTimer
 
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from libsyntyche.common import kill_theming
 
-class GenericTerminalInputBox(QtGui.QLineEdit):
+class GenericTerminalInputBox(QtWidgets.QLineEdit):
     tab_pressed = pyqtSignal(bool)
     reset_ac_suggestions = pyqtSignal()
     reset_history_travel = pyqtSignal()
@@ -27,7 +27,7 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
 
     def keyPressEvent(self, event) -> None:
         if event.text() or event.key() in (Qt.Key_Left, Qt.Key_Right):
-            QtGui.QLineEdit.keyPressEvent(self, event)
+            QtWidgets.QLineEdit.keyPressEvent(self, event)
             self.reset_ac_suggestions.emit()
             self.reset_history_travel.emit()
         elif event.key() == Qt.Key_Up:
@@ -37,7 +37,7 @@ class GenericTerminalInputBox(QtGui.QLineEdit):
         else:
             return super().keyPressEvent(event)
 
-class GenericTerminalOutputBox(QtGui.QLineEdit):
+class GenericTerminalOutputBox(QtWidgets.QLineEdit):
     def __init__(self) -> None:
         super().__init__()
         self.animate = False
@@ -65,14 +65,14 @@ class GenericTerminalOutputBox(QtGui.QLineEdit):
             self.buffer = text[1:]
             self.timer.start()
 
-class GenericTerminal(QtGui.QWidget):
+class GenericTerminal(QtWidgets.QWidget):
     def __init__(self,
-                 parent: QtGui.QWidget,
+                 parent: QtWidgets.QWidget,
                  input_term_constructor: Callable[[], GenericTerminalInputBox],
                  output_term_constructor: Callable[[], GenericTerminalOutputBox]) -> None:
         super().__init__(parent)
 
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         kill_theming(layout)
 
         self.input_term = input_term_constructor()

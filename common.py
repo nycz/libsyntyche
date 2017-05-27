@@ -55,12 +55,12 @@ def print_traceback() -> None:
 
 # ============= Qt Specific =========================
 def kill_theming(layout) -> None:
-    layout.setMargin(0)
+    layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(0)
 
 def set_hotkey(key: str, target: Any, callback: Callable[[Any], Any]) -> None:
-    from PyQt4 import QtGui
-    QtGui.QShortcut(QtGui.QKeySequence(key), target, callback)
+    from PyQt5 import QtWidgets, QtGui
+    QtWidgets.QShortcut(QtGui.QKeySequence(key), target, callback)
 # ===================================================
 
 
