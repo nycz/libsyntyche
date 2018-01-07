@@ -50,21 +50,24 @@ class AutocompletionState(NamedTuple):
     autocompleting: bool = False
     suggestions: List[str] = []
     suggestion_index: int = 0
-    original_text: str = None
+    original_text: str = ''
     match_start: int = 0
     match_end: int = 0
 
 
 class CommandLineInterface:
     def __init__(self,
-                 get_input: Callable[[], str] = None,
-                 set_input: Callable[[str], None] = None,
-                 set_output: Callable[[str], None] = None,
-                 get_cursor_pos: Callable[[], int] = None,
-                 set_cursor_pos: Callable[[int], None] = None) -> None:
-        for func in (get_input, set_input, set_output,
-                     get_cursor_pos, set_cursor_pos):
-            assert func is not None
+                 get_input: Optional[Callable[[], str]] = None,
+                 set_input: Optional[Callable[[str], None]] = None,
+                 set_output: Optional[Callable[[str], None]] = None,
+                 get_cursor_pos: Optional[Callable[[], int]] = None,
+                 set_cursor_pos: Optional[Callable[[int], None]] = None
+                 ) -> None:
+        assert get_input is not None
+        assert set_input is not None
+        assert set_output is not None
+        assert get_cursor_pos is not None
+        assert set_cursor_pos is not None
         self.get_input = get_input
         self.set_input = set_input
         self.set_output = set_output
@@ -164,10 +167,11 @@ class CommandLineInterface:
         self.history_index = 0
         self.history[0] = self.get_input()
 
-    def run_command(self) -> None:
-        input_text = self.get_input()
+    def run_command(self, text: Optional[str] = None) -> None:
+        input_text = text or self.get_input()
         self.set_output('')
         if self.confirmation_callback:
+            self.set_input('')
             _handle_confirmation(self.confirmation_callback, self.print_,
                                  input_text == 'y')
             self.confirmation_callback = None
@@ -330,3 +334,19 @@ def _move_in_history(back: bool, input_text: str, history: List[str],
     new_history_index = max(0, min(history_index + (1 if back else -1),
                                    len(history) - 1))
     return history[new_history_index], new_history_index
+
+
+def autocomplete_file_path(name: str, text: str) -> List[str]:
+    """A convenience autocompletion function for filepaths."""
+    import os
+    import os.path
+    full_path = os.path.abspath(os.path.expanduser(text))
+    if text.endswith(os.path.sep):
+        dir_path, name_fragment = full_path, ''
+    else:
+        dir_path, name_fragment = os.path.split(full_path)
+    raw_paths = (os.path.join(dir_path, x)
+                 for x in os.listdir(dir_path)
+                 if x.startswith(name_fragment))
+    return sorted(p + ('/' if os.path.isdir(p) else '')
+                  for p in raw_paths)
