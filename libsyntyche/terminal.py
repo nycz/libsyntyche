@@ -8,6 +8,7 @@ from .cli import CommandLineInterface
 
 
 class Terminal(QFrame):
+    error_triggered = pyqtSignal()
 
     class InputField(QLineEdit):
         def setFocus(self) -> None:
@@ -32,12 +33,17 @@ class Terminal(QFrame):
                 get_cursor_pos=self.input_field.cursorPosition,
                 set_cursor_pos=self.input_field.setCursorPosition,
                 set_output=self.output_field.setText,
+                show_error=self.on_error,
                 short_mode=short_mode)
         self.add_command = self.cli.add_command
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
         self.error = self.cli.error
         self.watch_terminal()
+
+    def on_error(self, text: str) -> None:
+        self.error_triggered.emit()
+        self.output_field.setText(text)
 
     def watch_terminal(self) -> None:
         class EventFilter(QObject):

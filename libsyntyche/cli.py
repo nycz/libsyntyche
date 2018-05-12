@@ -63,6 +63,7 @@ class CommandLineInterface:
                  set_output: Optional[Callable[[str], None]] = None,
                  get_cursor_pos: Optional[Callable[[], int]] = None,
                  set_cursor_pos: Optional[Callable[[int], None]] = None,
+                 show_error: Optional[Callable[[str], None]] = None,
                  short_mode: bool = False
                  ) -> None:
         assert get_input is not None
@@ -75,6 +76,11 @@ class CommandLineInterface:
         self.set_output = set_output
         self.get_cursor_pos = get_cursor_pos
         self.set_cursor_pos = set_cursor_pos
+
+        if show_error is None:
+            self.show_error = set_output
+        else:
+            self.show_error = show_error
 
         self.short_mode = short_mode
 
@@ -141,7 +147,7 @@ class CommandLineInterface:
         self.set_output(text)
 
     def error(self, text: str) -> None:
-        self.set_output(_error(text))
+        self.show_error(_error(text))
 
     def next_autocompletion(self) -> None:
         self._change_autocompletion(reverse=False)
@@ -200,7 +206,10 @@ class CommandLineInterface:
                          quiet)
         self.set_input(new_input_text)
         if new_output_text is not None:
-            self.set_output(new_output_text)
+            if error:
+                self.error(new_output_text)
+            else:
+                self.print_(new_output_text)
         if append_to_history:
             self.history = _add_to_history(self.history, input_text)
 
@@ -309,7 +318,7 @@ def _generate_suggestions(autocompletion_patterns: List[AutocompletionPattern],
 
 def _run_command(input_text: str, commands: Dict[str, Command],
                  short_mode: bool, quiet: bool
-                 ) -> Tuple[str, Optional[str], bool]:
+                 ) -> Tuple[str, Tuple[bool, Optional[str]], bool]:
     """
     Run a command.
 
@@ -317,7 +326,7 @@ def _run_command(input_text: str, commands: Dict[str, Command],
     the input to history.
     """
     if not input_text.strip():
-        return input_text, None, False
+        return input_text, (False, None), False
     if short_mode:
         command_name = input_text[0]
         arg = input_text[1:].strip() or None
@@ -326,13 +335,13 @@ def _run_command(input_text: str, commands: Dict[str, Command],
         arg = chunks[1] if len(chunks) == 2 else None
         command_name = chunks[0]
     if command_name not in commands:
-        return input_text, _error(f'Invalid command: {command_name}'), False
+        return input_text, (True, f'Invalid command: {command_name}'), False
     command = commands[command_name]
     if arg and command.args == ArgumentRules.NONE:
-        return (input_text, _error(f'This command doesn\'t '
+        return (input_text, (True, f'This command doesn\'t '
                                    f'take any arguments'), False)
     if not arg and command.args == ArgumentRules.REQUIRED:
-        return input_text, _error(f'This command requires an argument'), False
+        return input_text, (True, f'This command requires an argument'), False
     if command.args != ArgumentRules.NONE:
         command.callback(arg)
     else:
