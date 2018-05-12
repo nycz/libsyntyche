@@ -99,4 +99,4 @@ class Terminal(QFrame):
             self.input_field.text = command_string[1:]
             self.input_field.setFocus()
         else:
-            self.cli.run_command(command_string)
+            self.cli.run_command(command_string, quiet=True)

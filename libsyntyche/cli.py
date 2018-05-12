@@ -184,9 +184,11 @@ class CommandLineInterface:
         self.history_index = 0
         self.history[0] = self.get_input()
 
-    def run_command(self, text: Optional[str] = None) -> None:
+    def run_command(self, text: Optional[str] = None,
+                    quiet: bool = False) -> None:
         input_text = text or self.get_input()
-        self.set_output('')
+        if not quiet:
+            self.set_output('')
         if self.confirmation_callback:
             self.set_input('')
             _handle_confirmation(self.confirmation_callback, self.print_,
@@ -194,7 +196,8 @@ class CommandLineInterface:
             self.confirmation_callback = None
             return
         new_input_text, (error, new_output_text), append_to_history =\
-            _run_command(input_text, self.commands, self.short_mode)
+            _run_command(input_text, self.commands, self.short_mode,
+                         quiet)
         self.set_input(new_input_text)
         if new_output_text is not None:
             self.set_output(new_output_text)
@@ -305,7 +308,7 @@ def _generate_suggestions(autocompletion_patterns: List[AutocompletionPattern],
 
 
 def _run_command(input_text: str, commands: Dict[str, Command],
-                 short_mode: bool
+                 short_mode: bool, quiet: bool
                  ) -> Tuple[str, Optional[str], bool]:
     """
     Run a command.
@@ -334,7 +337,7 @@ def _run_command(input_text: str, commands: Dict[str, Command],
         command.callback(arg)
     else:
         command.callback()
-    return '', None, True
+    return '', (False, None), not quiet
 
 
 def _handle_confirmation(confirmation_callback: Tuple[Callable, str],
