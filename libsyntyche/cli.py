@@ -19,7 +19,7 @@ if any other key is pressed:
     - completion -> not running
 """
 import enum
-from operator import attrgetter
+from operator import itemgetter
 import re
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
@@ -44,6 +44,7 @@ class Command(NamedTuple):
     help_text: str
     callback: Callable
     args: ArgumentRules = ArgumentRules.OPTIONAL
+    short_name: str = ''
 
 
 class AutocompletionState(NamedTuple):
@@ -61,7 +62,8 @@ class CommandLineInterface:
                  set_input: Optional[Callable[[str], None]] = None,
                  set_output: Optional[Callable[[str], None]] = None,
                  get_cursor_pos: Optional[Callable[[], int]] = None,
-                 set_cursor_pos: Optional[Callable[[int], None]] = None
+                 set_cursor_pos: Optional[Callable[[int], None]] = None,
+                 short_mode: bool = False
                  ) -> None:
         assert get_input is not None
         assert set_input is not None
@@ -74,39 +76,51 @@ class CommandLineInterface:
         self.get_cursor_pos = get_cursor_pos
         self.set_cursor_pos = set_cursor_pos
 
+        self.short_mode = short_mode
+
         self.confirmation_callback: Optional[Tuple[Callable, str]] = None
 
         self.history: List[str] = ['']
         self.history_index = 0
         self.autocompletion_state = AutocompletionState()
 
-        self.commands: Dict[str, Command] = {
-            'help': Command('help', 'Show help about a command',
-                            self._help_command, ArgumentRules.REQUIRED)
-        }
-        self.autocompletion_patterns = [
-            AutocompletionPattern(
-                'command',
-                lambda name, text: _command_suggestions(self.commands,
-                                                        name, text),
-                end=r'( |$)',
-                illegal_chars=' \t'
-            ),
+        self.commands: Dict[str, Command] = {}
+        self.autocompletion_patterns = []
+        self.add_command(Command('help', 'Show help about a command',
+                                 self._help_command, ArgumentRules.OPTIONAL,
+                                 short_name='?'))
+        if not short_mode:
+            self.autocompletion_patterns.append(
+                AutocompletionPattern(
+                    'command',
+                    lambda name, text: _command_suggestions(
+                            self.commands, name, text, short_mode),
+                    end=r'( |$)',
+                    illegal_chars=' \t'
+                )
+            )
+        self.autocompletion_patterns.append(
             AutocompletionPattern(
                 'help',
-                lambda name, text: _command_suggestions(self.commands,
-                                                        name, text),
-                prefix=r'help\s+',
+                lambda name, text: _command_suggestions(
+                        self.commands, name, text, short_mode),
+                prefix=(r'\?\s*' if short_mode else r'help\s+'),
                 illegal_chars=' \t'
             )
-        ]
+        )
 
-    def _help_command(self, text: str) -> None:
-        text = text.strip()
-        if text in self.commands:
+    def _help_command(self, text: Optional[str]) -> None:
+        text = (text or '').strip()
+        if not text:
+            self.print_('All commands: '
+                        + ' '.join(sorted(self.commands.keys())))
+        elif text in self.commands:
             help_text = self.commands[text].help_text
             if not help_text.strip():
-                self.print_(f'No help text for "{text}"')
+                if self.commands[text].name:
+                    self.print_(self.commands[text].name.replace('-', ' '))
+                else:
+                    self.print_(f'No help text for "{text}"')
             else:
                 self.print_(help_text)
         else:
@@ -114,7 +128,10 @@ class CommandLineInterface:
 
     # Outside-visible methods
     def add_command(self, command: Command) -> None:
-        self.commands[command.name] = command
+        if self.short_mode:
+            self.commands[command.short_name] = command
+        else:
+            self.commands[command.name] = command
 
     def add_autocompletion_pattern(self, pattern: AutocompletionPattern
                                    ) -> None:
@@ -176,8 +193,8 @@ class CommandLineInterface:
                                  input_text == 'y')
             self.confirmation_callback = None
             return
-        new_input_text, new_output_text, append_to_history =\
-            _run_command(input_text, self.commands)
+        new_input_text, (error, new_output_text), append_to_history =\
+            _run_command(input_text, self.commands, self.short_mode)
         self.set_input(new_input_text)
         if new_output_text is not None:
             self.set_output(new_output_text)
@@ -247,10 +264,11 @@ def _run_autocompletion(input_text: str,
         return input_text, cursor_pos, autocompletion_state
 
 
-def _command_suggestions(commands: Dict, name: str, text: str) -> List[str]:
-    return [cmd.name + (' ' if cmd.args != ArgumentRules.NONE else '')
-            for cmd in sorted(commands.values(), key=attrgetter('name'))
-            if cmd.name.startswith(text)]
+def _command_suggestions(commands: Dict, name: str, text: str,
+                         short_mode: bool) -> List[str]:
+    return [cmdname + (' ' if cmd.args != ArgumentRules.NONE else '')
+            for cmdname, cmd in sorted(commands.items(), key=itemgetter(0))
+            if cmdname.startswith(text)]
 
 
 def _generate_suggestions(autocompletion_patterns: List[AutocompletionPattern],
@@ -286,7 +304,8 @@ def _generate_suggestions(autocompletion_patterns: List[AutocompletionPattern],
     return [], 0, 0
 
 
-def _run_command(input_text: str, commands: Dict[str, Command]
+def _run_command(input_text: str, commands: Dict[str, Command],
+                 short_mode: bool
                  ) -> Tuple[str, Optional[str], bool]:
     """
     Run a command.
@@ -296,9 +315,13 @@ def _run_command(input_text: str, commands: Dict[str, Command]
     """
     if not input_text.strip():
         return input_text, None, False
-    chunks = input_text.split(None, 1)
-    arg = chunks[1] if len(chunks) == 2 else None
-    command_name = chunks[0]
+    if short_mode:
+        command_name = input_text[0]
+        arg = input_text[1:].strip() or None
+    else:
+        chunks = input_text.split(None, 1)
+        arg = chunks[1] if len(chunks) == 2 else None
+        command_name = chunks[0]
     if command_name not in commands:
         return input_text, _error(f'Invalid command: {command_name}'), False
     command = commands[command_name]

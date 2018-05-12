@@ -14,7 +14,7 @@ class Terminal(QFrame):
             self.parentWidget().show()
             super().setFocus()
 
-    def __init__(self, parent):
+    def __init__(self, parent, short_mode: bool = False) -> None:
         super().__init__(parent)
         self.input_field = self.InputField(self)
         self.input_field.setObjectName('terminal_input')
@@ -31,7 +31,8 @@ class Terminal(QFrame):
                 set_input=self.input_field.setText,
                 get_cursor_pos=self.input_field.cursorPosition,
                 set_cursor_pos=self.input_field.setCursorPosition,
-                set_output=self.output_field.setText)
+                set_output=self.output_field.setText,
+                short_mode=short_mode)
         self.add_command = self.cli.add_command
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
