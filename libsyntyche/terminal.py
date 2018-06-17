@@ -1,8 +1,11 @@
+from datetime import datetime
+from enum import IntEnum
 from typing import cast, Callable
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt5.QtGui import QHideEvent, QKeyEvent
-from PyQt5.QtWidgets import QFrame, QLineEdit, QVBoxLayout
+from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QLineEdit,
+                             QListWidget, QVBoxLayout)
 
 from .cli import CommandLineInterface
 
@@ -22,28 +25,41 @@ class Terminal(QFrame):
         self.output_field = QLineEdit(self)
         self.output_field.setObjectName('terminal_output')
         self.output_field.setDisabled(True)
-        l = QVBoxLayout(self)
-        l.setContentsMargins(0, 0, 0, 0)
-        l.setSpacing(0)
-        l.addWidget(self.input_field)
-        l.addWidget(self.output_field)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.input_field)
+        layout.addWidget(self.output_field)
         self.cli = CommandLineInterface(
                 get_input=self.input_field.text,
-                set_input=self.input_field.setText,
+                set_input=self.on_input,
                 get_cursor_pos=self.input_field.cursorPosition,
                 set_cursor_pos=self.input_field.setCursorPosition,
-                set_output=self.output_field.setText,
+                set_output=self.on_print,
                 show_error=self.on_error,
                 short_mode=short_mode)
         self.add_command = self.cli.add_command
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
         self.error = self.cli.error
+        self.log_history = LogHistory(self)
+        layout.addWidget(self.log_history)
         self.watch_terminal()
+
+    def on_input(self, text: str) -> None:
+        self.input_field.setText(text)
+        if text:
+            self.log_history.add_input(text)
+
+    def on_print(self, text: str) -> None:
+        self.output_field.setText(text)
+        if text:
+            self.log_history.add(text)
 
     def on_error(self, text: str) -> None:
         self.error_triggered.emit()
         self.output_field.setText(text)
+        self.log_history.add_error(text)
 
     def watch_terminal(self) -> None:
         class EventFilter(QObject):
@@ -106,3 +122,45 @@ class Terminal(QFrame):
             self.input_field.setFocus()
         else:
             self.cli.run_command(command_string, quiet=True)
+
+
+class LogHistory(QListWidget):
+
+    class LogType(IntEnum):
+        NORMAL = 0
+        ERROR = 1
+        INPUT = 2
+
+    def __init__(self, parent: Terminal) -> None:
+        super().__init__(parent)
+        self.setAlternatingRowColors(True)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setSelectionMode(QAbstractItemView.NoSelection)
+        self.setDragDropMode(QAbstractItemView.NoDragDrop)
+        self.hide()
+
+    def toggle_visibility(self) -> None:
+        self.setVisible(not self.isVisible())
+
+    @staticmethod
+    def _timestamp() -> str:
+        return datetime.now().strftime('%H:%M:%S')
+
+    def add(self, message: str) -> None:
+        self._add_to_log(LogHistory.LogType.NORMAL, message)
+
+    def add_error(self, message: str) -> None:
+        self._add_to_log(LogHistory.LogType.ERROR, message)
+
+    def add_input(self, text: str) -> None:
+        self._add_to_log(LogHistory.LogType.INPUT, text)
+
+    def _add_to_log(self, type_: int, message: str) -> None:
+        timestamp = self._timestamp()
+        if type_ == LogHistory.LogType.ERROR:
+            message = '< [ERROR] ' + message
+        elif type_ == LogHistory.LogType.INPUT:
+            message = '> ' + message
+        else:
+            message = '< ' + message
+        self.addItem(f'{timestamp} - {message}')
