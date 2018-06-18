@@ -18,10 +18,16 @@ if completion key is pressed:
 if any other key is pressed:
     - completion -> not running
 """
+from contextlib import contextmanager
 import enum
+import logging
 from operator import itemgetter
 import re
-from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import (Callable, Dict, Iterator, List,
+                    NamedTuple, Optional, Tuple)
+
+
+logger = logging.getLogger(__name__)
 
 
 class ArgumentRules(enum.Enum):
@@ -132,6 +138,18 @@ class CommandLineInterface:
         else:
             self.error('No such command!')
 
+    @contextmanager
+    def _try_it(self, msg: str) -> Iterator[None]:
+        try:
+            yield
+        except Exception as e:
+            full_msg = f'{msg}, due to exception: {e!r}'
+            logger.exception(full_msg)
+            try:
+                self.error(full_msg)
+            except Exception as e2:
+                logger.exception(f'Printing to error output failed: {e2!r}')
+
     # Outside-visible methods
     def add_command(self, command: Command) -> None:
         if self.short_mode:
@@ -156,17 +174,19 @@ class CommandLineInterface:
         self._change_autocompletion(reverse=True)
 
     def _change_autocompletion(self, reverse: bool = False) -> None:
-        input_text = self.get_input()
-        cursor_pos = self.get_cursor_pos()
-        state = self.autocompletion_state
-        if not state.suggestions:
-            state = _init_autocompletion(input_text, cursor_pos, state,
-                                         self.autocompletion_patterns)
-        new_input_text, new_cursor_pos, new_autocompletion_state =\
-            _run_autocompletion(input_text, cursor_pos, state, reverse=reverse)
-        self.set_input(new_input_text)
-        self.set_cursor_pos(new_cursor_pos)
-        self.autocompletion_state = new_autocompletion_state
+        with self._try_it('Changing autocompletion failed'):
+            input_text = self.get_input()
+            cursor_pos = self.get_cursor_pos()
+            state = self.autocompletion_state
+            if not state.suggestions:
+                state = _init_autocompletion(input_text, cursor_pos, state,
+                                             self.autocompletion_patterns)
+            new_input_text, new_cursor_pos, new_autocompletion_state = \
+                _run_autocompletion(input_text, cursor_pos, state,
+                                    reverse=reverse)
+            self.set_input(new_input_text)
+            self.set_cursor_pos(new_cursor_pos)
+            self.autocompletion_state = new_autocompletion_state
 
     def stop_autocompleting(self) -> None:
         self.autocompletion_state = AutocompletionState()
@@ -178,13 +198,14 @@ class CommandLineInterface:
         self._traverse_history()
 
     def _traverse_history(self, back: bool = False) -> None:
-        if len(self.history) <= 1:
-            return
-        self.autocompletion_state = AutocompletionState()
-        new_input_text, self.history_index =\
-            _move_in_history(back, self.get_input(), self.history,
-                             self.history_index)
-        self.set_input(new_input_text)
+        with self._try_it('Browsing history failed'):
+            if len(self.history) <= 1:
+                return
+            self.autocompletion_state = AutocompletionState()
+            new_input_text, self.history_index =\
+                _move_in_history(back, self.get_input(), self.history,
+                                 self.history_index)
+            self.set_input(new_input_text)
 
     def reset_history_travel(self) -> None:
         self.history_index = 0
@@ -192,29 +213,30 @@ class CommandLineInterface:
 
     def run_command(self, text: Optional[str] = None,
                     quiet: bool = False) -> None:
-        input_text = text or self.get_input()
-        if not quiet:
-            self.set_output('')
-        if self.confirmation_callback:
-            self.set_input('')
-            _handle_confirmation(self.confirmation_callback, self.print_,
-                                 input_text == 'y')
-            self.confirmation_callback = None
-            return
-        new_input_text, (error, new_output_text), append_to_history =\
-            _run_command(input_text, self.commands, self.short_mode,
-                         quiet)
-        self.set_input(new_input_text)
-        if new_output_text is not None:
-            if error:
-                self.error(new_output_text)
-            else:
-                self.print_(new_output_text)
-        if append_to_history:
-            self.history = _add_to_history(self.history, input_text)
+        with self._try_it(f'Failed running command {text!r}'):
+            input_text = text or self.get_input()
+            if not quiet:
+                self.set_output('')
+            if self.confirmation_callback:
+                self.set_input('')
+                _handle_confirmation(self.confirmation_callback, self.print_,
+                                     input_text == 'y')
+                self.confirmation_callback = None
+                return
+            new_input_text, (error, new_output_text), append_to_history =\
+                _run_command(input_text, self.commands, self.short_mode,
+                             quiet)
+            self.set_input(new_input_text)
+            if new_output_text is not None:
+                if error:
+                    self.error(new_output_text)
+                else:
+                    self.print_(new_output_text)
+            if append_to_history:
+                self.history = _add_to_history(self.history, input_text)
 
     def confirm_command(self, text: str, callback: Callable, arg: str) -> None:
-        self.print_('{} Type y to confirm.'.format(text))
+        self.print_(f'{text} Type y to confirm.')
         self.set_input('')
         self.confirmation_callback = (callback, arg)
 
