@@ -7,7 +7,7 @@ except ImportError:
 else:
     markdown_available = True
 
-from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from typing import Optional
 
@@ -83,7 +83,7 @@ pre code, pre tt {
 """
 
 
-class FileViewer(QtWebEngineWidgets.QWebEngineView):
+class FileViewer(QtWidgets.QTextEdit):
 
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
