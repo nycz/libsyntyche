@@ -9,29 +9,42 @@ import shutil
 import sys
 import traceback
 
-from typing import Any, Callable
+from typing import Any, Callable, Optional
+
+try:
+    from PyQt5 import QtWidgets, QtGui
+except ImportError:
+    QtWidgets = QtGui = None
+
 
 # ============= IO/file handling ====================
-def read_json(path: str) -> str:
+
+def read_json(path: str) -> Any:
     return json.loads(read_file(path))
 
-def write_json(path: str, data: Any, sort_keys: bool = True, default=None) -> None:
+
+def write_json(path: str, data: Any, sort_keys: bool = True,
+               default: Optional[Any] = None) -> None:
     write_file(path, json.dumps(data, ensure_ascii=False,
                                 indent=2,
                                 sort_keys=sort_keys,
                                 default=default))
+
 
 def read_file(path: str) -> str:
     with open(path, encoding='utf-8') as f:
         data = f.read()
     return data
 
+
 def write_file(path: str, data: str) -> None:
     with open(path, 'w', encoding='utf-8') as f:
         f.write(data)
 
+
 def local_path(path: str) -> str:
     return os.path.join(sys.path[0], path)
+
 
 def make_sure_config_exists(config: str, defconfig: str) -> None:
     """
@@ -44,29 +57,35 @@ def make_sure_config_exists(config: str, defconfig: str) -> None:
             os.makedirs(path, mode=0o755, exist_ok=True)
         shutil.copyfile(defconfig, config)
         print('No config found, copied the default to {}.'.format(config))
+
 # ===================================================
 
 
 # ============= Misc functions ======================
+
 def print_traceback() -> None:
     traceback.print_exc(file=sys.stdout)
+
 # ===================================================
 
 
 # ============= Qt Specific =========================
-def kill_theming(layout) -> None:
+
+def kill_theming(layout: 'QtWidgets.QLayout') -> None:
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(0)
 
-def set_hotkey(key: str, target: Any, callback: Callable[[Any], Any]) -> None:
-    from PyQt5 import QtWidgets, QtGui
+
+def set_hotkey(key: str, target: 'QtWidgets.QWidget',
+               callback: Callable[[Any], Any]) -> None:
     QtWidgets.QShortcut(QtGui.QKeySequence(key), target, callback)
+
 # ===================================================
 
 
 # ============= Enhanced CSS ========================
 # DEPRECATED AS FUCK
-def parse_stylesheet(data):
+def parse_stylesheet(data: Any) -> str:
     """
     Return a valid CSS or Qt CSS stylesheet.
 
