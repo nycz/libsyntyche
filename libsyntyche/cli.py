@@ -51,6 +51,9 @@ class Command(NamedTuple):
     callback: Callable
     args: ArgumentRules = ArgumentRules.OPTIONAL
     short_name: str = ''
+    arg_help: Tuple[Tuple[str, str], ...] = ()
+    category: str = ''
+    strip_input: bool = True
 
 
 class AutocompletionState(NamedTuple):
@@ -351,7 +354,7 @@ def _run_command(input_text: str, commands: Dict[str, Command],
         return input_text, (False, None), False
     if short_mode:
         command_name = input_text[0]
-        arg = input_text[1:].strip() or None
+        arg = input_text[1:]
     else:
         chunks = input_text.split(None, 1)
         arg = chunks[1] if len(chunks) == 2 else None
@@ -359,6 +362,10 @@ def _run_command(input_text: str, commands: Dict[str, Command],
     if command_name not in commands:
         return input_text, (True, f'Invalid command: {command_name}'), False
     command = commands[command_name]
+    if short_mode:
+        if command.strip_input:
+            arg = arg.strip()
+        arg = arg or None
     if arg and command.args == ArgumentRules.NONE:
         return (input_text, (True, f'This command doesn\'t '
                                    f'take any arguments'), False)
