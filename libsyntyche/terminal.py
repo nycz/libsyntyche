@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import IntEnum
+import enum
 from typing import cast, Callable
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QObject
@@ -10,8 +10,15 @@ from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QLineEdit,
 from .cli import CommandLineInterface
 
 
+class MessageType(enum.Enum):
+    PRINT = enum.auto()
+    ERROR = enum.auto()
+    INPUT = enum.auto()
+
+
 class Terminal(QFrame):
     error_triggered = pyqtSignal()
+    show_message = pyqtSignal(datetime, MessageType, str)
 
     class InputField(QLineEdit):
         def setFocus(self) -> None:
@@ -44,6 +51,7 @@ class Terminal(QFrame):
         self.error = self.cli.error
         self.log_history = LogHistory(self)
         layout.addWidget(self.log_history)
+        self.log_history.show_message.connect(self.show_message)
         self.watch_terminal()
 
     def on_input(self, text: str) -> None:
@@ -125,11 +133,7 @@ class Terminal(QFrame):
 
 
 class LogHistory(QListWidget):
-
-    class LogType(IntEnum):
-        NORMAL = 0
-        ERROR = 1
-        INPUT = 2
+    show_message = pyqtSignal(datetime, MessageType, str)
 
     def __init__(self, parent: Terminal) -> None:
         super().__init__(parent)
@@ -142,25 +146,22 @@ class LogHistory(QListWidget):
     def toggle_visibility(self) -> None:
         self.setVisible(not self.isVisible())
 
-    @staticmethod
-    def _timestamp() -> str:
-        return datetime.now().strftime('%H:%M:%S')
-
     def add(self, message: str) -> None:
-        self._add_to_log(LogHistory.LogType.NORMAL, message)
+        self._add_to_log(MessageType.PRINT, message)
 
     def add_error(self, message: str) -> None:
-        self._add_to_log(LogHistory.LogType.ERROR, message)
+        self._add_to_log(MessageType.ERROR, message)
 
     def add_input(self, text: str) -> None:
-        self._add_to_log(LogHistory.LogType.INPUT, text)
+        self._add_to_log(MessageType.INPUT, text)
 
-    def _add_to_log(self, type_: int, message: str) -> None:
-        timestamp = self._timestamp()
-        if type_ == LogHistory.LogType.ERROR:
+    def _add_to_log(self, type_: MessageType, message: str) -> None:
+        timestamp = datetime.now()
+        self.show_message.emit(timestamp, type_, message)
+        if type_ == MessageType.ERROR:
             message = '< [ERROR] ' + message
-        elif type_ == LogHistory.LogType.INPUT:
+        elif type_ == MessageType.INPUT:
             message = '> ' + message
         else:
             message = '< ' + message
-        self.addItem(f'{timestamp} - {message}')
+        self.addItem(f'{timestamp.strftime("%H:%M:%S")} - {message}')
