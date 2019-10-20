@@ -126,7 +126,7 @@ class Terminal(QFrame):
         command_string (minus the leading space), otherwise run the command.
         """
         if command_string.startswith(' '):
-            self.input_field.text = command_string[1:]
+            self.input_field.setText(command_string[1:])
             self.input_field.setFocus()
         else:
             self.cli.run_command(command_string, quiet=True)
