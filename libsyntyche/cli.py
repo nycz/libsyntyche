@@ -39,7 +39,7 @@ class ArgumentRules(enum.Enum):
 
 class AutocompletionPattern(NamedTuple):
     name: str
-    get_suggestions: Callable
+    get_suggestions: Callable[[str, str], List[str]]
     prefix: str = ''
     start: str = r'^'
     end: str = r'$'
@@ -155,7 +155,7 @@ class CommandLineInterface:
         try:
             yield
         except Exception as e:
-            full_msg = f'{msg}, due to exception: {e!r}'
+            full_msg = f'[UNHANDLED EXCEPTION] {msg}, due to exception: {e!r}'
             logger.exception(full_msg)
             try:
                 self.error(full_msg)
