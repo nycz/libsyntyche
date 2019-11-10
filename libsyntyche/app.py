@@ -1,5 +1,6 @@
+from pathlib import Path
 import sys
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Union
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -17,7 +18,8 @@ class RootWindow(QtWidgets.QFrame):
 C = TypeVar('C', bound=QtWidgets.QWidget)
 
 
-def run_app(css_path: str, window_constructor: Type[C], args=None) -> None:
+def run_app(css_path: Union[Path, str, None], window_constructor: Type[C],
+            args=None) -> None:
     app = QtWidgets.QApplication(sys.argv)
     if css_path:
         with open(css_path) as f:
