@@ -22,6 +22,7 @@ from contextlib import contextmanager
 import enum
 import logging
 from operator import itemgetter
+from pathlib import Path
 import re
 from typing import (Callable, Dict, Iterator, List,
                     NamedTuple, Optional, Tuple)
@@ -73,7 +74,8 @@ class CommandLineInterface:
                  get_cursor_pos: Optional[Callable[[], int]] = None,
                  set_cursor_pos: Optional[Callable[[int], None]] = None,
                  show_error: Optional[Callable[[str], None]] = None,
-                 short_mode: bool = False
+                 short_mode: bool = False,
+                 history_file: Optional[Path] = None,
                  ) -> None:
         assert get_input is not None
         assert set_input is not None
@@ -99,6 +101,11 @@ class CommandLineInterface:
 
         self.history: List[str] = ['']
         self.history_index = 0
+        self.history_file = history_file
+        if history_file is not None and history_file.exists():
+            self.history.extend(
+                reversed(history_file.read_text().splitlines()))
+
         self.autocompletion_state = AutocompletionState()
 
         self.commands: Dict[str, Command] = {}
@@ -252,6 +259,9 @@ class CommandLineInterface:
                     self.print_(new_output_text)
             if append_to_history:
                 self.history = _add_to_history(self.history, input_text)
+                if self.history_file is not None:
+                    with self.history_file.open('a') as f:
+                        f.write(input_text + '\n')
 
         self.is_running_a_command = False
 

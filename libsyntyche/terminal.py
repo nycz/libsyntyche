@@ -1,6 +1,7 @@
 from datetime import datetime
 import enum
-from typing import cast, Callable
+from pathlib import Path
+from typing import cast, Callable, Optional
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt5.QtGui import QHideEvent, QKeyEvent
@@ -25,7 +26,8 @@ class Terminal(QFrame):
             self.parentWidget().show()
             super().setFocus()
 
-    def __init__(self, parent, short_mode: bool = False) -> None:
+    def __init__(self, parent, short_mode: bool = False,
+                 history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
         self.input_field = self.InputField(self)
         self.input_field.setObjectName('terminal_input')
@@ -44,7 +46,8 @@ class Terminal(QFrame):
                 set_cursor_pos=self.input_field.setCursorPosition,
                 set_output=self.on_print,
                 show_error=self.on_error,
-                short_mode=short_mode)
+                short_mode=short_mode,
+                history_file=history_file)
         self.add_command = self.cli.add_command
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
