@@ -49,6 +49,7 @@ class Terminal(QFrame):
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
         self.error = self.cli.error
+        self.prompt = self.cli.prompt
         self.log_history = LogHistory(self)
         layout.addWidget(self.log_history)
         self.log_history.show_message.connect(self.show_message)

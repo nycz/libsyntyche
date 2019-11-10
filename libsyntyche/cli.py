@@ -85,6 +85,8 @@ class CommandLineInterface:
         self.set_output = set_output
         self.get_cursor_pos = get_cursor_pos
         self.set_cursor_pos = set_cursor_pos
+        self.is_running_a_command = False
+        self.string_to_prompt: Optional[str] = None
 
         if show_error is None:
             self.show_error = set_output
@@ -170,6 +172,13 @@ class CommandLineInterface:
     def error(self, text: str) -> None:
         self.show_error(_error(text))
 
+    def prompt(self, text: str) -> None:
+        if self.is_running_a_command:
+            self.string_to_prompt = text
+        else:
+            self.is_running_a_command = None
+            self.set_input(text)
+
     def next_autocompletion(self) -> None:
         self._change_autocompletion(reverse=False)
 
@@ -216,6 +225,7 @@ class CommandLineInterface:
 
     def run_command(self, text: Optional[str] = None,
                     quiet: bool = False) -> None:
+        self.is_running_a_command = True
         with self._try_it(f'Failed running command {text!r}'):
             input_text = text or self.get_input()
             if not quiet:
@@ -229,7 +239,12 @@ class CommandLineInterface:
             new_input_text, (error, new_output_text), append_to_history =\
                 _run_command(input_text, self.commands, self.short_mode,
                              quiet)
-            self.set_input(new_input_text)
+            if self.string_to_prompt:
+                self.set_input(self.string_to_prompt)
+                self.string_to_prompt = None
+            else:
+                self.set_input(new_input_text)
+            self.is_running_a_command = False
             if new_output_text is not None:
                 if error:
                     self.error(new_output_text)
@@ -237,6 +252,8 @@ class CommandLineInterface:
                     self.print_(new_output_text)
             if append_to_history:
                 self.history = _add_to_history(self.history, input_text)
+
+        self.is_running_a_command = False
 
     def confirm_command(self, text: str, callback: Callable, arg: str) -> None:
         self.print_(f'{text} Type y to confirm.')
