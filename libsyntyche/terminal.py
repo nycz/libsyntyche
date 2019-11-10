@@ -27,7 +27,7 @@ class Terminal(QFrame):
             super().setFocus()
 
     def __init__(self, parent, short_mode: bool = False,
-                 help_command: str = 'h',
+                 help_command: str = 'h', log_command: str = 'l',
                  history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
         self.input_field = self.InputField(self)
@@ -72,6 +72,13 @@ class Terminal(QFrame):
         layout.insertWidget(0, self.help_view)
         # Log
         self.log_history = LogHistory(self)
+        if log_command:
+            self.add_command(Command(
+                'toggle-terminal-log',
+                'Show or hide the log of all input and output in the terminal.',
+                self.log_history.toggle_visibility,
+                args=ArgumentRules.NONE, short_name=log_command
+            ))
         layout.addWidget(self.log_history)
         self.log_history.show_message.connect(self.show_message)
         self.watch_terminal()
