@@ -1,14 +1,14 @@
 from datetime import datetime
 import enum
 from pathlib import Path
-from typing import cast, Callable, Optional
+from typing import cast, Callable, Dict, Iterable, Optional
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt5.QtGui import QHideEvent, QKeyEvent
-from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QLineEdit,
-                             QListWidget, QVBoxLayout)
+from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QLabel, QLineEdit,
+                             QListWidget, QVBoxLayout, QWidget)
 
-from .cli import CommandLineInterface
+from .cli import ArgumentRules, Command, CommandLineInterface
 
 
 class MessageType(enum.Enum):
@@ -27,6 +27,7 @@ class Terminal(QFrame):
             super().setFocus()
 
     def __init__(self, parent, short_mode: bool = False,
+                 help_command: str = 'h',
                  history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
         self.input_field = self.InputField(self)
@@ -53,10 +54,38 @@ class Terminal(QFrame):
         self.print_ = self.cli.print_
         self.error = self.cli.error
         self.prompt = self.cli.prompt
+        # Help
+        self.help_command = help_command
+        if help_command:
+            self.add_command(Command(
+                'toggle-help',
+                'Show or hide the help view.',
+                self.toggle_extended_help,
+                args=ArgumentRules.OPTIONAL,
+                short_name=self.help_command,
+                arg_help=(('', 'Toggle extended help view.'),
+                          ('X', 'Show help for command X, which should be '
+                           'one from the list below.'))
+            ))
+        self.help_view = HelpView(self, self.cli.commands, help_command)
+        self.help_view.show_help(help_command)
+        layout.insertWidget(0, self.help_view)
+        # Log
         self.log_history = LogHistory(self)
         layout.addWidget(self.log_history)
         self.log_history.show_message.connect(self.show_message)
         self.watch_terminal()
+
+    def toggle_extended_help(self, arg: str) -> None:
+        if not arg and self.help_view.isVisible():
+            self.help_view.hide()
+        else:
+            success = self.help_view.show_help(arg or self.help_command)
+            if success:
+                self.help_view.show()
+            else:
+                self.error('Unknown command')
+                self.help_view.hide()
 
     def on_input(self, text: str) -> None:
         self.input_field.setText(text)
@@ -169,3 +198,74 @@ class LogHistory(QListWidget):
         else:
             message = '< ' + message
         self.addItem(f'{timestamp.strftime("%H:%M:%S")} - {message}')
+
+
+class HelpView(QLabel):
+    def __init__(self, parent: QWidget,
+                 commands: Dict[str, Command],
+                 help_command: str) -> None:
+        super().__init__(parent)
+        self.commands = commands
+        self.help_command = help_command
+        self.set_help_text()
+        self.setWordWrap(True)
+        self.hide()
+
+    def set_help_text(self) -> None:
+        def escape(s: str) -> str:
+            return s.replace('<', '&lt;').replace('>', '&gt;')
+        # TODO: make this into labels and widgets instead maybe?
+        main_template = ('<h2 style="margin:0">{command}: {desc}</h2>'
+                         '<hr><table>{rows}</table>')
+        row_template = ('<tr><td><b>{command}{arg}</b></td>'
+                        '<td style="padding-left:10px">{subdesc}</td></tr>')
+
+        def gen_arg_help(cmd: Command) -> Iterable[str]:
+            err_template = ('<tr><td colspan="2"><b><i>ERROR: {}'
+                            '</i></b></td></tr>')
+            if not cmd.arg_help and cmd.args == ArgumentRules.NONE:
+                return ["<tr><td>This command doesn't take any arguments."
+                        "</td></tr>"]
+            elif not cmd.arg_help:
+                return [err_template.format('missing help for args')]
+            else:
+                out = [row_template.format(command=escape(cmd.short_name),
+                                           arg=escape(arg),
+                                           subdesc=escape(subdesc))
+                       for arg, subdesc in cmd.arg_help]
+                if cmd.args == ArgumentRules.NONE:
+                    out.append(err_template.format(
+                        'command takes no arguments but there are still '
+                        'help lines!'))
+                return out
+
+        self.help_html = {
+            id_: main_template.format(
+                command=escape(id_),
+                desc=cmd.help_text,
+                rows=''.join(gen_arg_help(cmd))
+            )
+            for id_, cmd in self.commands.items()
+            if cmd.short_name
+        }
+        command_template = ('<div style="margin-left:5px">'
+                            '<h3>List of {} commands</h3>'
+                            '<table style="margin-top:2px">{}</table></div>')
+        categories = {cmd.category for cmd in self.commands.values()}
+        for group in sorted(categories):
+            command_rows = (
+                row_template.format(command=escape(cmd), arg='',
+                                    subdesc=meta.help_text)
+                for cmd, meta in self.commands.items()
+                if meta.category == group and cmd
+            )
+            self.help_html[self.help_command] += command_template.format(
+                group or 'misc',
+                ''.join(command_rows))
+
+    def show_help(self, arg: str) -> bool:
+        self.set_help_text()
+        if arg not in self.help_html:
+            return False
+        self.setText(self.help_html[arg])
+        return True
