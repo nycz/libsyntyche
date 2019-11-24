@@ -26,7 +26,7 @@ class Terminal(QFrame):
             self.parentWidget().show()
             super().setFocus()
 
-    def __init__(self, parent, short_mode: bool = False,
+    def __init__(self, parent, short_mode: bool = True,
                  help_command: str = 'h', log_command: str = 'l',
                  history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
