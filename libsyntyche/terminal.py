@@ -3,12 +3,15 @@ import enum
 from pathlib import Path
 from typing import cast, Callable, Dict, Iterable, Optional
 
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QObject
+from PyQt5.QtCore import (pyqtSignal, Qt, QEasingCurve, QEvent, QObject,
+                          QPoint, QPropertyAnimation, QTimer)
 from PyQt5.QtGui import QHideEvent, QKeyEvent
-from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QLabel, QLineEdit,
-                             QListWidget, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QGraphicsOpacityEffect,
+                             QLabel, QLineEdit, QListWidget, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 from .cli import ArgumentRules, Command, CommandLineInterface
+from .widgets import Signal0
 
 
 class MessageType(enum.Enum):
@@ -170,6 +173,59 @@ class Terminal(QFrame):
             self.input_field.setFocus()
         else:
             self.cli.run_command(command_string, quiet=True)
+
+
+class MessageTrayItem(QLabel):
+    def __init__(self, text: str, name: str, parent: QWidget) -> None:
+        super().__init__(text, parent)
+        self.parent = parent
+        self.setObjectName(name)
+        self.setSizePolicy(QSizePolicy.Maximum,
+                           QSizePolicy.Preferred)
+        # Fade out animation
+        effect = QGraphicsOpacityEffect(self)
+        effect.setOpacity(1)
+        self.setGraphicsEffect(effect)
+        a1 = QPropertyAnimation(effect, b'opacity')
+        a1.setEasingCurve(QEasingCurve.InOutQuint)
+        a1.setDuration(500)
+        a1.setStartValue(1)
+        a1.setEndValue(0)
+        cast(Signal0, a1.finished).connect(self.deleteLater)
+        self.fade_animation = a1
+        # Move animation
+        a2 = QPropertyAnimation(self, b'pos')
+        a2.setEasingCurve(QEasingCurve.InQuint)
+        a2.setDuration(300)
+        self.move_animation = a2
+
+    def kill(self) -> None:
+        self.fade_animation.start()
+        self.move_animation.setStartValue(self.pos())
+        self.move_animation.setEndValue(self.pos() - QPoint(0, 50))
+        self.move_animation.start()
+
+
+class MessageTray(QFrame):
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        # TODO: put this in settings
+        self.seconds_alive = 5
+        layout = QVBoxLayout(self)
+        layout.addStretch()
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+
+    def add_message(self, timestamp: datetime, msgtype: MessageType,
+                    text: str) -> None:
+        if msgtype == MessageType.INPUT:
+            return
+        classes = {
+            MessageType.ERROR: 'terminal_error',
+            MessageType.PRINT: 'terminal_print',
+        }
+        lbl = MessageTrayItem(text, classes[msgtype], self)
+        self.layout().addWidget(lbl)
+        QTimer.singleShot(1000 * self.seconds_alive, lbl.kill)
 
 
 class LogHistory(QListWidget):
