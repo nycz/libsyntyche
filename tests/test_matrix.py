@@ -1,6 +1,6 @@
 import unittest
 
-from matrix import Matrix
+from libsyntyche.matrix import Matrix
 
 def default_item():
     return 'TEST'
