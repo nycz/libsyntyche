@@ -1,7 +1,7 @@
 from datetime import datetime
 import enum
 from pathlib import Path
-from typing import cast, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, cast, Dict, Iterable, Optional
 
 from PyQt5.QtCore import (pyqtSignal, Qt, QEasingCurve, QEvent, QObject,
                           QPoint, QPropertyAnimation, QTimer)
@@ -25,11 +25,11 @@ class Terminal(QFrame):
     show_message = pyqtSignal(datetime, MessageType, str)
 
     class InputField(QLineEdit):
-        def setFocus(self) -> None:
+        def setFocus(self) -> None:  # type: ignore
             self.parentWidget().show()
             super().setFocus()
 
-    def __init__(self, parent, short_mode: bool = True,
+    def __init__(self, parent: QWidget, short_mode: bool = True,
                  help_command: str = 'h', log_command: str = 'l',
                  history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
@@ -151,13 +151,14 @@ class Terminal(QFrame):
         self.term_event_filter.up_pressed.connect(self.cli.older_history)
         self.term_event_filter.down_pressed.connect(self.cli.newer_history)
         self.term_event_filter.reset_history.connect(self.cli.reset_history_travel)
-        self.input_field.returnPressed.connect(self.cli.run_command)
+        cast(Signal0, self.input_field.returnPressed).connect(self.cli.run_command)
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.output_field.setText('')
         super().hideEvent(event)
 
-    def confirm_command(self, text: str, callback: Callable, arg: str) -> None:
+    def confirm_command(self, text: str, callback: Callable[[str], Any],
+                        arg: str) -> None:
         self.input_field.setFocus()
         self.cli.confirm_command(text, callback, arg)
 

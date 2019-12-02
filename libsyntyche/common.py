@@ -13,8 +13,8 @@ from typing import Any, Callable, Optional
 
 try:
     from PyQt5 import QtWidgets, QtGui
-except ImportError:
-    QtWidgets = QtGui = None
+except ModuleNotFoundError:
+    pass
 
 
 # ============= IO/file handling ====================

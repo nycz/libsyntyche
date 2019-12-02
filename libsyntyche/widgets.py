@@ -1,10 +1,20 @@
-from typing import Any, Callable, cast, Generic, List, Union, Type, TypeVar
+from typing import (Any, Callable, cast, Generic, List, Optional,
+                    Union, Type, TypeVar)
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtWidgets import QBoxLayout, QLayout, QWidget
 
-from .cli import AutocompletionPattern, CommandLineInterface
+
+# Helper functions
+
+def kill_theming(layout: QtWidgets.QLayout) -> None:
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(0)
+
+
+def set_hotkey(key: str, target: QtWidgets.QWidget,
+               callback: Callable[[Any], Any]) -> None:
+    QtWidgets.QShortcut(QtGui.QKeySequence(key), target, callback)
 
 
 # Wrappers for signals for easier type checking
@@ -68,13 +78,9 @@ class ScrolledList(QtWidgets.QScrollArea):
     def add_layout(self, layout: QtWidgets.QLayout) -> None:
         self._vbox.insertLayout(self._vbox.count() - 1, layout)
 
-    def clear(self) -> None:
-        self._vbox.clear()
-        self._vbox.addStretch(1)
-
 
 class Stretch:
-    def __init__(self, *args):
+    def __init__(self, *args: Any) -> None:
         self.weight = 0
         self.item = None
         for arg in args:
@@ -86,19 +92,18 @@ class Stretch:
                 raise TypeError('Invalid argument')
 
 
-def HBoxLayout(*args, **kwargs) -> QtWidgets.QHBoxLayout:
-    return BoxLayout(QtWidgets.QBoxLayout.LeftToRight, *args, **kwargs)
+def HBoxLayout(*args: Any) -> QtWidgets.QHBoxLayout:
+    return cast(QtWidgets.QHBoxLayout,
+                BoxLayout(QtWidgets.QBoxLayout.LeftToRight, *args))
 
 
-def VBoxLayout(*args, **kwargs) -> QtWidgets.QVBoxLayout:
-    return BoxLayout(QtWidgets.QBoxLayout.TopToBottom, *args, **kwargs)
+def VBoxLayout(*args: Any) -> QtWidgets.QVBoxLayout:
+    return cast(QtWidgets.QVBoxLayout,
+                BoxLayout(QtWidgets.QBoxLayout.TopToBottom, *args))
 
 
-            #   parent: QWidget = None,
-            #   widgets: List[Union[QtWidgets.QLabel, QWidget]] = [],
-            #   spacing: int = 0) -> QBoxLayout:
-def BoxLayout(direction: QBoxLayout.Direction, *args) -> QBoxLayout:
-    parent: QWidget = None
+def BoxLayout(direction: QBoxLayout.Direction, *args: Any) -> QBoxLayout:
+    parent: Optional[QWidget] = None
     items: List[Union[QtWidgets.QLayout, QWidget, Stretch]] = []
     spacing = 0
     for arg in args:
@@ -126,71 +131,3 @@ def BoxLayout(direction: QBoxLayout.Direction, *args) -> QBoxLayout:
         elif isinstance(item, QLayout):
             box.addLayout(item, stretch=stretch)
     return box
-
-
-class Terminal(QtWidgets.QFrame):
-
-    def __init__(self, parent: QWidget) -> None:
-        super().__init__(parent)
-        self.input_field = QtWidgets.QLineEdit(self)
-        self.output_field = QtWidgets.QLineEdit(self)
-        self.output_field.setDisabled(True)
-        vbox = VBoxLayout(self)
-        vbox.addWidget(self.input_field)
-        vbox.addWidget(self.output_field)
-        self.cli = CommandLineInterface(self.input_field.text,
-                                        self.input_field.setText,
-                                        self.input_field.cursorPosition,
-                                        self.input_field.setCursorPosition,
-                                        self.output_field.setText)
-        ac = AutocompletionPattern('test', autocomplete_file_path,
-                                   'open ')
-        self.cli.add_autocompletion_pattern(ac)
-        self.init_key_triggers()
-
-    def init_key_triggers(self):
-        class EventFilter(QtCore.QObject):
-            def eventFilter(self_, obj: object, event: QtCore.QEvent) -> bool:
-                catch_keys = [
-                    (Qt.Key_Backtab, Qt.ShiftModifier, self.cli.previous_autocompletion),
-                    (Qt.Key_Tab, Qt.NoModifier, self.cli.next_autocompletion),
-                    (Qt.Key_Up, Qt.NoModifier, self.cli.older_history),
-                    (Qt.Key_Down, Qt.NoModifier, self.cli.newer_history),
-                ]
-                if event.type() == QtCore.QEvent.KeyPress:
-                    key_event = cast(QtGui.QKeyEvent, event)
-                    # if event.text() or event.key() in (Qt.Key_Left, Qt.Key_Right):
-                    #     self.cli.reset_history_travel()
-                    #     self.cli.stop_autocompleting()
-                    #     return False
-                    for key, mod, callback in catch_keys:
-                        if key_event.key() == key and key_event.modifiers() == mod:
-                            callback()
-                            return True
-                    else:
-                        self.cli.reset_history_travel()
-                        self.cli.stop_autocompleting()
-                        return False
-                return False
-        self.term_event_filter = EventFilter()
-        self.input_field.installEventFilter(self.term_event_filter)
-        self.input_field.returnPressed.connect(self.cli.run_command)
-
-    def focusInEvent(self, event):
-        self.input_field.setFocus()
-
-
-def autocomplete_file_path(name: str, text: str):
-    """A convenience autocompletion function for filepaths."""
-    import os
-    import os.path
-    full_path = os.path.abspath(os.path.expanduser(text))
-    if text.endswith(os.path.sep):
-        dir_path, name_fragment = full_path, ''
-    else:
-        dir_path, name_fragment = os.path.split(full_path)
-    raw_paths = (os.path.join(dir_path, x)
-                 for x in os.listdir(dir_path)
-                 if x.startswith(name_fragment))
-    return sorted(p + ('/' if os.path.isdir(p) else '')
-                  for p in raw_paths)

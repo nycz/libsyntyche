@@ -1,5 +1,5 @@
 import re
-from typing import cast, Callable, Optional
+from typing import Callable, Optional
 
 from PyQt5.QtGui import QTextCursor, QTextDocument
 
@@ -55,13 +55,13 @@ class SearchAndReplaceable():
         def generate_flags(flagstr: str) -> None:
             # self.search_flags is automatically generated and does not
             # need to be initialized in __init__()
-            self.search_flags = QTextDocument.FindFlags()  # type: ignore
+            self.search_flags = QTextDocument.FindFlags()
             if 'b' in flagstr:
-                self.search_flags |= QTextDocument.FindBackward  # type: ignore
+                self.search_flags |= QTextDocument.FindBackward
             if 'i' not in flagstr:
-                self.search_flags |= QTextDocument.FindCaseSensitively  # type: ignore
+                self.search_flags |= QTextDocument.FindCaseSensitively
             if 'w' in flagstr:
-                self.search_flags |= QTextDocument.FindWholeWords  # type: ignore
+                self.search_flags |= QTextDocument.FindWholeWords
         search_rx = re.compile(r'([^/]|\\/)+$')
         search_flags_rx = re.compile(r'([^/]|\\/)*?([^\\]/[biw]*)$')
         replace_rx = re.compile(r"""
@@ -95,7 +95,7 @@ class SearchAndReplaceable():
             self.error('Malformed search/replace expression')
 
     def _searching_backwards(self) -> bool:
-        return QTextDocument.FindBackward & self.search_flags
+        return bool(QTextDocument.FindBackward & self.search_flags)
 
     def search_next(self) -> None:
         """
@@ -107,8 +107,7 @@ class SearchAndReplaceable():
             self.error('No previous searches')
             return
         temp_cursor = self.textCursor()
-        found = self.find(self.search_buffer, cast(QTextDocument.FindFlags,
-                                                   self.search_flags))
+        found = self.find(self.search_buffer, self.search_flags)
         if not found:
             if not self.textCursor().atStart() \
                         or (self._searching_backwards()
@@ -117,8 +116,7 @@ class SearchAndReplaceable():
                     self.moveCursor(QTextCursor.End)
                 else:
                     self.moveCursor(QTextCursor.Start)
-                found = self.find(self.search_buffer, cast(QTextDocument.FindFlags,
-                                                           self.search_flags))
+                found = self.find(self.search_buffer, self.search_flags)
                 if not found:
                     self.setTextCursor(temp_cursor)
                     self.error('Text not found')
@@ -137,8 +135,7 @@ class SearchAndReplaceable():
             self.error('No previous searches')
             return
         temp_cursor = self.textCursor()
-        found = self.find(self.search_buffer, cast(QTextDocument.FindFlags,
-                                                   self.search_flags))
+        found = self.find(self.search_buffer, self.search_flags)
         if not found:
             if not self.textCursor().atStart() \
                         or (self._searching_backwards()
@@ -147,8 +144,7 @@ class SearchAndReplaceable():
                     self.moveCursor(QTextCursor.End)
                 else:
                     self.moveCursor(QTextCursor.Start)
-                found = self.find(self.search_buffer, cast(QTextDocument.FindFlags,
-                                                           self.search_flags))
+                found = self.find(self.search_buffer, self.search_flags)
                 if not found:
                     self.setTextCursor(temp_cursor)
         if found:

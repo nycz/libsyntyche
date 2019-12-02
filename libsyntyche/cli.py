@@ -24,9 +24,12 @@ import logging
 from operator import itemgetter
 from pathlib import Path
 import re
-from typing import (Callable, Dict, Iterator, List,
-                    NamedTuple, Optional, Tuple)
+from typing import (Any, Callable, Dict, Iterator, List,
+                    NamedTuple, Optional, Tuple, Union)
 
+
+# TODO: add some check to warn when overwriting an existing command
+# TODO: also either completely remove long mode or just default to short mode
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +49,15 @@ class AutocompletionPattern(NamedTuple):
     illegal_chars: str = ''
 
 
+_ArgCallback = Callable[[str], Any]
+
+_NoArgCallback = Callable[[], Any]
+
+
 class Command(NamedTuple):
     name: str
     help_text: str
-    callback: Callable
+    callback: Union[_ArgCallback, _NoArgCallback]
     args: ArgumentRules = ArgumentRules.OPTIONAL
     short_name: str = ''
     arg_help: Tuple[Tuple[str, str], ...] = ()
@@ -97,7 +105,8 @@ class CommandLineInterface:
 
         self.short_mode = short_mode
 
-        self.confirmation_callback: Optional[Tuple[Callable, str]] = None
+        self.confirmation_callback: Optional[Tuple[Callable[[str], Any],
+                                                   str]] = None
 
         self.history: List[str] = ['']
         self.history_index = 0
@@ -109,7 +118,7 @@ class CommandLineInterface:
         self.autocompletion_state = AutocompletionState()
 
         self.commands: Dict[str, Command] = {}
-        self.autocompletion_patterns = []
+        self.autocompletion_patterns: List[AutocompletionPattern] = []
         self.add_command(Command('help', 'Show help about a command',
                                  self._help_command, ArgumentRules.OPTIONAL,
                                  short_name='?'))
@@ -183,7 +192,7 @@ class CommandLineInterface:
         if self.is_running_a_command:
             self.string_to_prompt = text
         else:
-            self.is_running_a_command = None
+            self.is_running_a_command = False
             self.set_input(text)
 
     def next_autocompletion(self) -> None:
@@ -265,7 +274,8 @@ class CommandLineInterface:
 
         self.is_running_a_command = False
 
-    def confirm_command(self, text: str, callback: Callable, arg: str) -> None:
+    def confirm_command(self, text: str, callback: Callable[[str], Any],
+                        arg: str) -> None:
         self.print_(f'{text} Type y to confirm.')
         self.set_input('')
         self.confirmation_callback = (callback, arg)
@@ -328,7 +338,7 @@ def _run_autocompletion(input_text: str,
         return input_text, cursor_pos, autocompletion_state
 
 
-def _command_suggestions(commands: Dict, name: str, text: str,
+def _command_suggestions(commands: Dict[str, Command], name: str, text: str,
                          short_mode: bool) -> List[str]:
     return [cmdname + (' ' if cmd.args != ArgumentRules.NONE else '')
             for cmdname, cmd in sorted(commands.items(), key=itemgetter(0))
@@ -377,6 +387,7 @@ def _run_command(input_text: str, commands: Dict[str, Command],
     Return new input text, new output text, and whether or not to append
     the input to history.
     """
+    arg: Optional[str]
     if not input_text.strip():
         return input_text, (False, None), False
     if short_mode:
@@ -390,7 +401,7 @@ def _run_command(input_text: str, commands: Dict[str, Command],
         return input_text, (True, f'Invalid command: {command_name}'), False
     command = commands[command_name]
     if short_mode:
-        if command.strip_input:
+        if command.strip_input and arg:
             arg = arg.strip()
         arg = arg or None
     if arg and command.args == ArgumentRules.NONE:
@@ -399,13 +410,13 @@ def _run_command(input_text: str, commands: Dict[str, Command],
     if not arg and command.args == ArgumentRules.REQUIRED:
         return input_text, (True, f'This command requires an argument'), False
     if command.args != ArgumentRules.NONE:
-        command.callback(arg)
+        command.callback(arg)  # type: ignore
     else:
-        command.callback()
+        command.callback()  # type: ignore
     return '', (False, None), not quiet
 
 
-def _handle_confirmation(confirmation_callback: Tuple[Callable, str],
+def _handle_confirmation(confirmation_callback: Tuple[_ArgCallback, str],
                          print_: Callable[[str], None],
                          confirmed: bool) -> None:
     if confirmed:
