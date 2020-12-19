@@ -15,6 +15,14 @@ class RootWindow(QtWidgets.QFrame):
         box = HBoxLayout(self) if horizontal else VBoxLayout(self)
 
 
+class StackedRootWindow(QtWidgets.QWidget):
+    """Generic root window with stack layout."""
+    def __init__(self, title: str = '') -> None:
+        super().__init__()
+        self.setWindowTitle(title)
+        self.stack = QtWidgets.QStackedLayout(self)
+
+
 C = TypeVar('C', bound=QtWidgets.QWidget)
 
 
