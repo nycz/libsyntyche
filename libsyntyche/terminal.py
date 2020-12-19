@@ -3,7 +3,7 @@ import enum
 from pathlib import Path
 from typing import Any, Callable, cast, Dict, Iterable, Optional
 
-from PyQt5.QtCore import (pyqtSignal, Qt, QEasingCurve, QEvent, QObject,
+from PyQt5.QtCore import (Qt, QEasingCurve, QEvent, QObject,
                           QPoint, QPropertyAnimation, QTimer)
 from PyQt5.QtGui import QHideEvent, QKeyEvent
 from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QGraphicsOpacityEffect,
@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QGraphicsOpacityEffect,
                              QVBoxLayout, QWidget)
 
 from .cli import ArgumentRules, Command, CommandLineInterface
-from .widgets import Signal0
+from .widgets import Signal0, mk_signal0, mk_signal3
 
 
 class MessageType(enum.Enum):
@@ -21,8 +21,8 @@ class MessageType(enum.Enum):
 
 
 class Terminal(QFrame):
-    error_triggered = pyqtSignal()
-    show_message = pyqtSignal(datetime, MessageType, str)
+    error_triggered = mk_signal0()
+    show_message = mk_signal3(datetime, MessageType, str)
 
     class InputField(QLineEdit):
         def setFocus(self) -> None:  # type: ignore
@@ -83,7 +83,7 @@ class Terminal(QFrame):
                 args=ArgumentRules.NONE, short_name=log_command
             ))
         layout.addWidget(self.log_history)
-        self.log_history.show_message.connect(self.show_message)
+        self.log_history.show_message.connect(self.show_message.emit)
         self.watch_terminal()
 
     def toggle_extended_help(self, arg: str) -> None:
@@ -114,14 +114,14 @@ class Terminal(QFrame):
 
     def watch_terminal(self) -> None:
         class EventFilter(QObject):
-            backtab_pressed = pyqtSignal()
-            tab_pressed = pyqtSignal()
-            reset_completion = pyqtSignal()
-            up_pressed = pyqtSignal()
-            down_pressed = pyqtSignal()
-            reset_history = pyqtSignal()
-            page_up_pressed = pyqtSignal()
-            page_down_pressed = pyqtSignal()
+            backtab_pressed = mk_signal0()
+            tab_pressed = mk_signal0()
+            reset_completion = mk_signal0()
+            up_pressed = mk_signal0()
+            down_pressed = mk_signal0()
+            reset_history = mk_signal0()
+            page_up_pressed = mk_signal0()
+            page_down_pressed = mk_signal0()
 
             def eventFilter(self_, obj: object, event: QEvent) -> bool:
                 catch_keys = [
@@ -230,7 +230,7 @@ class MessageTray(QFrame):
 
 
 class LogHistory(QListWidget):
-    show_message = pyqtSignal(datetime, MessageType, str)
+    show_message = mk_signal3(datetime, MessageType, str)
 
     def __init__(self, parent: Terminal) -> None:
         super().__init__(parent)

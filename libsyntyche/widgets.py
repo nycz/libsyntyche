@@ -60,6 +60,23 @@ class Signal3(Generic[_T1, _T2, _T3]):
     def connect(self, slot: Callable[[_T1, _T2, _T3], None]) -> None: ...
 
 
+def mk_signal0() -> Signal0:
+    return cast(Signal0, QtCore.pyqtSignal())
+
+
+def mk_signal1(t1: Type[_T1]) -> Signal1[_T1]:
+    return cast(Signal1[_T1], QtCore.pyqtSignal(t1))
+
+
+def mk_signal2(t1: Type[_T1], t2: Type[_T2]) -> Signal2[_T1, _T2]:
+    return cast(Signal2[_T1, _T2], QtCore.pyqtSignal(t1, t2))
+
+
+def mk_signal3(t1: Type[_T1], t2: Type[_T2], t3: Type[_T3]
+               ) -> Signal3[_T1, _T2, _T3]:
+    return cast(Signal3[_T1, _T2, _T3], QtCore.pyqtSignal(t1, t2, t3))
+
+
 # Actual widgets
 
 class ScrolledList(QtWidgets.QScrollArea):

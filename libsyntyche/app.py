@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Type, TypeVar, Union
 
 from PyQt5 import QtCore, QtWidgets
 
-from .widgets import HBoxLayout, VBoxLayout
+from .widgets import HBoxLayout, VBoxLayout, mk_signal0
 
 
 class RootWindow(QtWidgets.QFrame):
@@ -36,7 +36,7 @@ def run_app(css_path: Union[Path, str, None], window_constructor: Type[C],
         app.setStyleSheet(css)
 
         class AppEventFilter(QtCore.QObject):
-            activation_event = QtCore.pyqtSignal()
+            activation_event = mk_signal0()
 
             def eventFilter(self, obj: QtWidgets.QWidget,
                             event: QtCore.QEvent) -> bool:
