@@ -1,7 +1,7 @@
 from typing import (Any, Callable, cast, Generic, List, Optional,
                     Union, Type, TypeVar)
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QBoxLayout, QLayout, QWidget
 
 
@@ -12,8 +12,8 @@ def kill_theming(layout: QtWidgets.QLayout) -> None:
     layout.setSpacing(0)
 
 
-def set_hotkey(key: str, target: QtWidgets.QWidget,
-               callback: Callable[[Any], Any]) -> None:
+def set_hotkey(key: Union[str, QtCore.Qt.Key], target: QtWidgets.QWidget,
+               callback: Callable[..., Any]) -> None:
     QtWidgets.QShortcut(QtGui.QKeySequence(key), target, callback)
 
 
