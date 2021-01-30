@@ -29,7 +29,7 @@ class Terminal(QFrame):
             self.parentWidget().show()
             super().setFocus()
 
-    def __init__(self, parent: QWidget, short_mode: bool = True,
+    def __init__(self, parent: QWidget,
                  help_command: str = 'h', log_command: str = 'l',
                  history_file: Optional[Path] = None) -> None:
         super().__init__(parent)
@@ -44,14 +44,14 @@ class Terminal(QFrame):
         layout.addWidget(self.input_field)
         layout.addWidget(self.output_field)
         self.cli = CommandLineInterface(
-                get_input=self.input_field.text,
-                set_input=self.on_input,
-                get_cursor_pos=self.input_field.cursorPosition,
-                set_cursor_pos=self.input_field.setCursorPosition,
-                set_output=self.on_print,
-                show_error=self.on_error,
-                short_mode=short_mode,
-                history_file=history_file)
+            get_input=self.input_field.text,
+            set_input=self.on_input,
+            get_cursor_pos=self.input_field.cursorPosition,
+            set_cursor_pos=self.input_field.setCursorPosition,
+            set_output=self.on_print,
+            show_error=self.on_error,
+            history_file=history_file
+        )
         self.add_command = self.cli.add_command
         self.add_autocompletion_pattern = self.cli.add_autocompletion_pattern
         self.print_ = self.cli.print_
@@ -120,8 +120,6 @@ class Terminal(QFrame):
             up_pressed = mk_signal0()
             down_pressed = mk_signal0()
             reset_history = mk_signal0()
-            page_up_pressed = mk_signal0()
-            page_down_pressed = mk_signal0()
 
             def eventFilter(self_, obj: object, event: QEvent) -> bool:
                 catch_keys = [
@@ -139,7 +137,7 @@ class Terminal(QFrame):
                     if key_event.key() not in modkeys + (Qt.Key_Up, Qt.Key_Down):
                         self_.reset_history.emit()
                     for key, mod, signal in catch_keys:
-                        if key_event.key() == key and key_event.modifiers() == mod:
+                        if key_event.key() == key and int(key_event.modifiers()) == mod:
                             signal.emit()
                             return True
                 return False
@@ -179,10 +177,8 @@ class Terminal(QFrame):
 class MessageTrayItem(QLabel):
     def __init__(self, text: str, name: str, parent: QWidget) -> None:
         super().__init__(text, parent)
-        self.parent = parent
         self.setObjectName(name)
-        self.setSizePolicy(QSizePolicy.Maximum,
-                           QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
         # Fade out animation
         effect = QGraphicsOpacityEffect(self)
         effect.setOpacity(1)
@@ -216,8 +212,7 @@ class MessageTray(QFrame):
         layout.addStretch()
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
-    def add_message(self, timestamp: datetime, msgtype: MessageType,
-                    text: str) -> None:
+    def add_message(self, timestamp: datetime, msgtype: MessageType, text: str) -> None:
         if msgtype == MessageType.INPUT:
             return
         classes = {
