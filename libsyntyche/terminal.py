@@ -1,10 +1,10 @@
-from datetime import datetime
 import enum
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, cast, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, cast
 
-from PyQt5.QtCore import (Qt, QEasingCurve, QEvent, QObject,
-                          QPoint, QPropertyAnimation, QTimer)
+from PyQt5.QtCore import (QEasingCurve, QEvent, QObject, QPoint,
+                          QPropertyAnimation, Qt, QTimer)
 from PyQt5.QtGui import QHideEvent, QKeyEvent
 from PyQt5.QtWidgets import (QAbstractItemView, QFrame, QGraphicsOpacityEffect,
                              QLabel, QLineEdit, QListWidget, QSizePolicy,

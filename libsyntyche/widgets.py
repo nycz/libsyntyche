@@ -1,11 +1,9 @@
-from typing import (Any, Callable, cast, List, Optional, Protocol,
-                    Union, Type, TypeVar)
+from typing import (Any, Callable, List, Optional, Protocol, Type, TypeVar,
+                    Union, cast)
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QBoxLayout, QLayout, QWidget
 
-
-# Helper functions
 
 def kill_theming(layout: QtWidgets.QLayout) -> None:
     layout.setContentsMargins(0, 0, 0, 0)

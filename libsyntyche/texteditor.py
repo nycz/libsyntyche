@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
 import enum
 import re
+from dataclasses import dataclass, field
 from typing import Callable, Optional, Set, Union
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QTextCursor, QTextDocument
-
 
 # Flags
 _FLAG_BACKWARDS = 'b'

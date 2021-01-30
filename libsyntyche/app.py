@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any, List, Optional, Type, TypeVar, Union, cast
 
 from PyQt5 import QtCore, QtWidgets

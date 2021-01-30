@@ -18,15 +18,14 @@ if completion key is pressed:
 if any other key is pressed:
     - completion -> not running
 """
-from contextlib import contextmanager
 import enum
 import logging
+import re
+from contextlib import contextmanager
 from operator import itemgetter
 from pathlib import Path
-import re
-from typing import (Any, Callable, Dict, Iterator, List,
-                    NamedTuple, Optional, Tuple, Union, cast)
-
+from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
+                    Tuple, Union, cast)
 
 # TODO: add some check to warn when overwriting an existing command
 # TODO: also either completely remove long mode or just default to short mode
