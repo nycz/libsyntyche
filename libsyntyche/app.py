@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-from typing import Any, List, Optional, Type, TypeVar, Union
+from typing import Any, List, Optional, Type, TypeVar, Union, cast
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -12,10 +12,13 @@ class RootWindow(QtWidgets.QFrame):
     def __init__(self, title: str = '', horizontal: bool = False) -> None:
         super().__init__()
         self.setWindowTitle(title)
-        box = HBoxLayout(self) if horizontal else VBoxLayout(self)
+        if horizontal:
+            HBoxLayout(self)
+        else:
+            VBoxLayout(self)
 
 
-class StackedRootWindow(QtWidgets.QWidget):
+class StackedRootWindow(QtWidgets.QFrame):
     """Generic root window with stack layout."""
     def __init__(self, title: str = '') -> None:
         super().__init__()
@@ -30,20 +33,17 @@ def run_app(css_path: Union[Path, str, None], window_constructor: Type[C],
             args: Optional[List[Any]] = None) -> None:
     app = QtWidgets.QApplication(sys.argv)
     if css_path:
-        css_path_ = css_path
-        with open(css_path) as f:
-            css = f.read()
-        app.setStyleSheet(css)
+        if isinstance(css_path, str):
+            css_path = Path(css_path)
+        app.setStyleSheet(css_path.read_text())
 
         class AppEventFilter(QtCore.QObject):
             activation_event = mk_signal0()
 
-            def eventFilter(self, obj: QtWidgets.QWidget,
-                            event: QtCore.QEvent) -> bool:
+            def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
                 if event.type() == QtCore.QEvent.ApplicationActivate:
-                    with open(css_path_) as f:
-                        css = f.read()
-                    obj.setStyleSheet(css)
+                    cast(QtWidgets.QApplication, obj).setStyleSheet(
+                        cast(Path, css_path).read_text())
                     self.activation_event.emit()
                 return False
         event_filter = AppEventFilter()

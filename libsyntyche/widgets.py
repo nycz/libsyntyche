@@ -76,23 +76,6 @@ def mk_signal3(t1: Type[_T1], t2: Type[_T2], t3: Type[_T3]
 
 # Actual widgets
 
-class ScrolledList(QtWidgets.QScrollArea):
-    def __init__(self, parent: QWidget) -> None:
-        super().__init__(parent)
-        self._widget = QtWidgets.QFrame(self)
-        self._widget.setObjectName('ScrolledListWidget')
-        self.setWidgetResizable(True)
-        self.setWidget(self._widget)
-        self._vbox = VBoxLayout(self._widget)
-        self._vbox.addStretch(1)
-
-    def add_widget(self, widget: QWidget) -> None:
-        self._vbox.insertWidget(self._vbox.count() - 1, widget)
-
-    def add_layout(self, layout: QtWidgets.QLayout) -> None:
-        self._vbox.insertLayout(self._vbox.count() - 1, layout)
-
-
 class Stretch:
     def __init__(self, *args: Any) -> None:
         self.weight = 0
