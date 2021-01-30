@@ -1,4 +1,4 @@
-from typing import (Any, Callable, cast, Generic, List, Optional,
+from typing import (Any, Callable, cast, List, Optional, Protocol,
                     Union, Type, TypeVar)
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -19,15 +19,12 @@ def set_hotkey(key: Union[str, QtCore.Qt.Key], target: QtWidgets.QWidget,
 
 # Wrappers for signals for easier type checking
 
-T = TypeVar('T', bound=Callable[..., Any])
-
-
 _T1 = TypeVar('_T1')
 _T2 = TypeVar('_T2')
 _T3 = TypeVar('_T3')
 
 
-class Signal0:
+class Signal0(Protocol):
     def __init__(self) -> None: ...
 
     def emit(self) -> None: ...
@@ -35,7 +32,7 @@ class Signal0:
     def connect(self, slot: Callable[[], None]) -> None: ...
 
 
-class Signal1(Generic[_T1]):
+class Signal1(Protocol[_T1]):
     def __init__(self, arg_type: Type[_T1]) -> None: ...
 
     def emit(self, arg: _T1) -> None: ...
@@ -43,7 +40,7 @@ class Signal1(Generic[_T1]):
     def connect(self, slot: Callable[[_T1], None]) -> None: ...
 
 
-class Signal2(Generic[_T1, _T2]):
+class Signal2(Protocol[_T1, _T2]):
     def __init__(self, arg1_type: Type[_T1], arg2_type: Type[_T2]) -> None: ...
 
     def emit(self, arg1: _T1, arg2: _T2) -> None: ...
@@ -51,7 +48,7 @@ class Signal2(Generic[_T1, _T2]):
     def connect(self, slot: Callable[[_T1, _T2], None]) -> None: ...
 
 
-class Signal3(Generic[_T1, _T2, _T3]):
+class Signal3(Protocol[_T1, _T2, _T3]):
     def __init__(self, arg1_type: Type[_T1], arg2_type: Type[_T2],
                  arg3_type: Type[_T3]) -> None: ...
 
