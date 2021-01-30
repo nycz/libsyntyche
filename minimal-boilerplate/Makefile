@@ -1,4 +1,4 @@
-PKGDIR = libsyntyche
+PKGDIR = foo
 
 
 # Linting
