@@ -3,9 +3,8 @@ PKGDIR = foo
 
 # Linting
 
-.PHONY: vulture
-vulture:
-	-vulture vulture_whitelist.py ${PKGDIR}
+.PHONY: check
+check: flake8 mypy vulture
 
 .PHONY: flake8
 flake8:
@@ -15,8 +14,9 @@ flake8:
 mypy:
 	-mypy --strict --pretty -p ${PKGDIR}
 
-.PHONY: check
-check: mypy flake8 vulture
+.PHONY: vulture
+vulture:
+	-vulture vulture_whitelist.py ${PKGDIR}
 
 
 # Formatting
