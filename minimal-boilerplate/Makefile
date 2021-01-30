@@ -5,7 +5,7 @@ PKGDIR = foo
 
 .PHONY: vulture
 vulture:
-	-vulture whitelist.py ${PKGDIR}
+	-vulture vulture_whitelist.py ${PKGDIR}
 
 .PHONY: flake8
 flake8:
